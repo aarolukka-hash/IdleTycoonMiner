@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 1. Korvaa tämä osuus omilla Firebase-asetuksillasi, jotka kopioit äsken!
+    const firebaseConfig = {
+        apiKey: "AIzaSyA3aToY8vSHq9qGpYnZtlCUQ-_jnXwg96s",
+        authDomain: "tycoonidleminerbysushi.firebaseapp.com",
+        projectId: "tycoonidleminerbysushi",
+        storageBucket: "tycoonidleminerbysushi.firebasestorage.app",
+        messagingSenderId: "486285275822",
+        appId: "1:486285275822:web:045010b7f313110ebaf33f"
+    };
+
+    // Alustetaan Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Tehdään funktioista globaaleja, jotta pelisi muu koodi voi käyttää niitä
+    window.saveGameToFirebase = async function(gameData) {
+        try {
+            await setDoc(doc(db, "players", gameData.playerId), gameData);
+        } catch (e) {
+            console.error("Tallennus epäonnistui:", e);
+        }
+    };
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>😺 TycoonIdleMiner</title>
