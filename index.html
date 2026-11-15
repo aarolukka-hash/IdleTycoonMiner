@@ -693,7 +693,7 @@
                 <div class="shop-card">
                     <div>
                         <h3>🚀 Shard Income Booster</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Increases your income level & scales normal Upgrades. Cost = normal Upgrade / 10!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Increases your income level & scales normal Upgrades. Cost = normal Upgrade / 90 (rounded)!</p>
                     </div>
                     <button id="buyShardUpgradeBtn" onclick="buyShardIncomeUpgrade()">Upgrade (Cost: <span id="shardUpgradeCostDisplay">1</span> 💠)</button>
                 </div>
@@ -871,7 +871,7 @@
         }
 
         function getShardIncomeUpgradeCost() {
-            return Math.max(1, Math.floor(getUpgradeCost() / 10));
+            return Math.max(1, Math.round(getUpgradeCost() / 90));
         }
 
         function getClickUpgradeCost() {
@@ -1131,7 +1131,6 @@
                 game.cpsLevel = 1;
                 game.shards = 0;
                 game.shardClicks = 0;
-                // Ei nollata clickUpgradeLeveliä tai autoClickUpgradeLeveliä! Säilyvät nyt rebirthissä.
                 game.rebirths++;
                 game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
