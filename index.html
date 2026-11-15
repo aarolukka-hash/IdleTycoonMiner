@@ -607,7 +607,7 @@
 
         <div class="panel">
             <h2>🔄 Rebirth</h2>
-            <p>Resets money, ores & shards (keeps cats!). Increases Multiplier by +1x. Cost increases <strong>2.5x</strong> each time.</p>
+            <p>Resets money, ores & shards (keeps cats & shard clicker upgrades!). Increases Multiplier by +1x. Cost increases <strong>2.5x</strong> each time.</p>
             <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
         </div>
 
@@ -1131,8 +1131,7 @@
                 game.cpsLevel = 1;
                 game.shards = 0;
                 game.shardClicks = 0;
-                game.clickUpgradeLevel = 1;
-                game.autoClickUpgradeLevel = 0;
+                // Ei nollata clickUpgradeLeveliä tai autoClickUpgradeLeveliä! Säilyvät nyt rebirthissä.
                 game.rebirths++;
                 game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
