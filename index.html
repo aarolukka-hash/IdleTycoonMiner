@@ -415,6 +415,10 @@
             background-color: #ff4444;
             color: white;
         }
+        .use-btn {
+            background-color: #00ffcc;
+            color: #121212;
+        }
         .sell-all-btn {
             background-color: #ffaa00;
             color: #121212;
@@ -455,7 +459,7 @@
 <body>
 
     <h1>😺 TycoonIdleMiner</h1>
-    <p>Earn money, upgrade your income, rebirth, collect shards, and manage your cats & ores!</p>
+    <p>Earn money, upgrade your income, rebirth, collect shards, and manage your cats & items!</p>
 
     <div class="stats">
         <div>Money: <span id="moneyDisplay">0</span> 💵</div>
@@ -497,7 +501,7 @@
 
         <div class="panel">
             <h2>💠 Shards Clicker</h2>
-            <p>Requires Rebirth 5! Click repeatedly to earn magical shards for the Shard Shop.</p>
+            <p>Requires Rebirth 5! Click 25 times for a shard (clicks automatically too!).</p>
             <button class="shard-click-btn" id="shardClickBtn" onclick="clickShard()" disabled>💠 Locked (Rebirth 5)</button>
         </div>
     </div>
@@ -531,17 +535,25 @@
                 <div class="shop-card">
                     <div>
                         <h3>🧪 10x Money Potion</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Multiplies your money income by <strong>10x</strong> for 5 minutes!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Inventory. Multiplies income by <strong>10x</strong> for 5 mins when used!</p>
                     </div>
-                    <button id="buyPotionBtn" onclick="buyPotion()">Buy (100 💠)</button>
+                    <button id="buyPotionBtn" onclick="buyItemToInventory('potion', 100)">Buy (100 💠)</button>
                 </div>
 
                 <div class="shop-card">
                     <div>
                         <h3>🐟 Premium Cat Food</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Doubles the amount of ores your cats mine (<strong>2x Ores</strong>) for 10 minutes!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Inventory. Doubles cat mined ores (<strong>2x Ores</strong>) for 10 mins when used!</p>
                     </div>
-                    <button id="buyCatFoodBtn" onclick="buyCatFood()">Buy (100 💠)</button>
+                    <button id="buyCatFoodBtn" onclick="buyItemToInventory('catfood', 100)">Buy (100 💠)</button>
+                </div>
+
+                <div class="shop-card">
+                    <div>
+                        <h3>🚀 Shard Income Booster</h3>
+                        <p style="font-size: 0.9rem; color: #bbb;">Permanently boosts your CPS level based on upgrade count and shard upgrades!</p>
+                    </div>
+                    <button id="buyShardUpgradeBtn" onclick="buyShardIncomeUpgrade()">Upgrade (Cost: <span id="shardUpgradeCostDisplay">1</span> 💠)</button>
                 </div>
 
                 <div class="shop-card">
@@ -566,6 +578,7 @@
                 <div class="sidebar">
                     <button class="tab-btn active" id="tabOres" onclick="switchTab('ores')">💎 Ores</button>
                     <button class="tab-btn" id="tabCats" onclick="switchTab('cats')">🐱 Cats</button>
+                    <button class="tab-btn" id="tabShardItems" onclick="switchTab('sharditems')">🧪 Shard Items</button>
                     <button class="tab-btn" id="tabShards" onclick="switchTab('shards')">💠 Shards</button>
                 </div>
 
@@ -574,13 +587,14 @@
                         <h3 id="invSectionTitle" style="margin: 0; color: #ff007f;">💎 Mined Ores</h3>
                         <button class="sell-all-btn" id="sellAllOresBtn" onclick="sellAllUnfavoritedOres()">Sell All (Non-Favorite)</button>
                     </div>
-                    <p id="invSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 0 0;">Click an item below to Favorite or Sell it.</p>
+                    <p id="invSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 0 0;">Click an item below to view options.</p>
 
                     <div class="item-grid" id="invGrid"></div>
 
                     <div class="action-bar" id="actionBar">
                         <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
                         <div class="action-buttons" id="actionButtons" style="display: none;">
+                            <button class="use-btn" id="useActionBtn" onclick="useSelectedItem()" style="display: none;">✨ Use</button>
                             <button class="equip-btn" id="equipActionBtn" onclick="toggleEquipCat()" style="display: none;">⛏️ Equip</button>
                             <button class="fav-btn" id="favActionBtn" onclick="toggleFavorite()" style="display: none;">★ Favorite</button>
                             <button class="sell-btn" id="sellActionBtn" onclick="sellSelectedItem()" style="display: none;">Sell</button>
@@ -595,6 +609,7 @@
         let game = {
             money: 0,
             cpsLevel: 1,
+            shardIncomeLevel: 0,
             rebirths: 0,
             rebirthCost: 1000,
             shards: 0,
@@ -603,6 +618,7 @@
             catFoodEndTime: 0,
             cats: [],
             ores: [],
+            shardItems: [],
             purchasedShopItems: []
         };
 
@@ -654,6 +670,11 @@
 
         function getUpgradeCost() {
             return Math.floor(10 * Math.pow(1.5, game.cpsLevel - 1));
+        }
+
+        function getShardIncomeUpgradeCost() {
+            let baseCost = Math.max(1, Math.floor(game.cpsLevel / 10));
+            return Math.floor(baseCost * Math.pow(1.2, game.shardIncomeLevel));
         }
 
         function getMaxMiningCats() {
@@ -712,14 +733,26 @@
             saveGame(true);
         }, 5000);
 
+        setInterval(() => {
+            if (game.rebirths >= 5) {
+                game.shardClicks++;
+                if (game.shardClicks >= 25) {
+                    game.shardClicks = 0;
+                    game.shards++;
+                    showToast(`💠 Auto-shard earned! (+1 Shard)`, "#00b4d8");
+                }
+                updateMainUI();
+            }
+        }, 5000);
+
         let lastTick = Date.now();
         setInterval(() => {
             let now = Date.now();
             let dt = (now - lastTick) / 1000;
             lastTick = now;
 
-            let currentCps = game.cpsLevel * getMultiplier();
-            game.money += currentCps * dt;
+            let effectiveCps = (game.cpsLevel + (game.shardIncomeLevel * 5)) * getMultiplier();
+            game.money += effectiveCps * dt;
 
             let baseMiningTime = 300;
             let rebirthSpeedBonus = game.rebirths >= 2 ? 1 + (game.rebirths - 1) * 0.1 : 1.0;
@@ -773,7 +806,7 @@
             updateMainScreenMiningGrid();
 
             if (document.getElementById('inventoryModal').style.display === 'flex') {
-                if (currentTab === 'cats' || currentTab === 'shards') {
+                if (currentTab === 'cats' || currentTab === 'shards' || currentTab === 'sharditems') {
                     game.cats.forEach(cat => {
                         let bar = document.getElementById(`prog-${cat.id}`);
                         if (bar) {
@@ -781,8 +814,6 @@
                         }
                     });
                 } else if (currentTab === 'ores' && oreMinedThisTick) {
-                    renderInventory();
-                } else if (currentTab === 'shards') {
                     renderInventory();
                 }
             }
@@ -797,10 +828,41 @@
             }
         }
 
+        function buyShardIncomeUpgrade() {
+            let cost = getShardIncomeUpgradeCost();
+            if (game.shards >= cost) {
+                game.shards -= cost;
+                game.shardIncomeLevel++;
+                showToast(`🚀 Shard Income Booster upgraded! (+5 Base CPS)`, "#00ffcc");
+                updateShardShopUI();
+                saveGame(false);
+            }
+        }
+
+        function buyItemToInventory(type, cost) {
+            if (game.shards < cost) return;
+            game.shards -= cost;
+
+            let itemName = type === 'potion' ? '🧪 10x Money Potion' : '🐟 Premium Cat Food';
+            let itemDesc = type === 'potion' ? 'Multiplies income by 10x for 5 mins' : 'Doubles cat mined ores for 10 mins';
+
+            game.shardItems.push({
+                id: Date.now() + Math.random(),
+                type: type,
+                name: itemName,
+                desc: itemDesc
+            });
+
+            showToast(`📦 Purchased <strong>${itemName}</strong> into Inventory!`, "#f72585");
+            updateShardShopUI();
+            saveGame(false);
+        }
+
         function doRebirth() {
             if (game.money >= game.rebirthCost) {
                 game.money = 0;
                 game.cpsLevel = 1;
+                game.shardIncomeLevel = 0;
                 game.rebirths++;
                 game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
@@ -846,7 +908,7 @@
         function clickShard() {
             if (game.rebirths < 5) return;
             game.shardClicks++;
-            if (game.shardClicks >= 100) {
+            if (game.shardClicks >= 25) {
                 game.shardClicks = 0;
                 game.shards++;
                 showToast(`💠 You earned <strong>1 Shard</strong>!`, "#00b4d8");
@@ -867,6 +929,9 @@
 
         function updateShardShopUI() {
             document.getElementById('shopShardCount').textContent = formatNumber(game.shards);
+            let shardUpCost = getShardIncomeUpgradeCost();
+            document.getElementById('shardUpgradeCostDisplay').textContent = formatNumber(shardUpCost);
+            document.getElementById('buyShardUpgradeBtn').disabled = game.shards < shardUpCost;
             document.getElementById('buyPotionBtn').disabled = game.shards < 100;
             document.getElementById('buyCatFoodBtn').disabled = game.shards < 100;
 
@@ -893,40 +958,6 @@
                 }
                 document.getElementById('buyPickaxeUpgradeBtn').disabled = game.shards < 1000;
             }
-        }
-
-        function buyPotion() {
-            if (game.shards < 100) return;
-            game.shards -= 100;
-            let now = Date.now();
-            game.potionEndTime = Math.max(now, game.potionEndTime) + (5 * 60 * 1000);
-            
-            game.purchasedShopItems.push({
-                name: "🧪 10x Money Potion",
-                desc: "Multiplies money by 10x",
-                timeAdded: now
-            });
-
-            showToast(`🧪 <strong>10x Money Potion</strong> activated for 5 mins!`, "#f72585");
-            updateShardShopUI();
-            saveGame(false);
-        }
-
-        function buyCatFood() {
-            if (game.shards < 100) return;
-            game.shards -= 100;
-            let now = Date.now();
-            game.catFoodEndTime = Math.max(now, game.catFoodEndTime) + (10 * 60 * 1000);
-
-            game.purchasedShopItems.push({
-                name: "🐟 Premium Cat Food",
-                desc: "Doubles cat mined ores (2x)",
-                timeAdded: now
-            });
-
-            showToast(`🐟 <strong>Premium Cat Food</strong> activated for 10 mins (2x Ores)!`, "#ffaa00");
-            updateShardShopUI();
-            saveGame(false);
         }
 
         function buyPickaxeUpgrade() {
@@ -1027,16 +1058,15 @@
         }
 
         function updateMainUI() {
-            let mult = getMultiplier();
-            let currentCps = game.cpsLevel * mult;
+            let effectiveCps = (game.cpsLevel + (game.shardIncomeLevel * 5)) * getMultiplier();
             let upgradeCost = getUpgradeCost();
             let maxCats = getMaxMiningCats();
             let eqCats = getEquippedCatsCount();
             let nextSlotReb = (Math.floor(game.rebirths / 5) + 1) * 5;
 
             document.getElementById('moneyDisplay').textContent = formatNumber(game.money);
-            document.getElementById('cpsDisplay').textContent = formatNumber(currentCps);
-            document.getElementById('multiplierDisplay').textContent = mult.toFixed(1);
+            document.getElementById('cpsDisplay').textContent = formatNumber(effectiveCps);
+            document.getElementById('multiplierDisplay').textContent = getMultiplier().toFixed(1);
             document.getElementById('rebirthCount').textContent = game.rebirths;
             document.getElementById('shardDisplay').textContent = formatNumber(game.shards);
             document.getElementById('upgradeCost').textContent = formatNumber(upgradeCost);
@@ -1056,7 +1086,7 @@
                 shopBtn.textContent = "🛒 Shard Shop (Rebirth 5)";
             } else {
                 shardBtn.disabled = false;
-                shardBtn.textContent = `💠 Click for Shard (${game.shardClicks}/100)`;
+                shardBtn.textContent = `💠 Click for Shard (${game.shardClicks}/25)`;
                 shopBtn.disabled = false;
                 shopBtn.textContent = "🛒 Shard Shop";
             }
@@ -1131,6 +1161,7 @@
             selectedItemId = null;
             document.getElementById('tabOres').classList.toggle('active', tab === 'ores');
             document.getElementById('tabCats').classList.toggle('active', tab === 'cats');
+            document.getElementById('tabShardItems').classList.toggle('active', tab === 'sharditems');
             document.getElementById('tabShards').classList.toggle('active', tab === 'shards');
             document.getElementById('sellAllOresBtn').style.display = tab === 'ores' ? 'block' : 'none';
             renderInventory();
@@ -1154,6 +1185,28 @@
                 }
             }
             saveGame(true);
+            renderInventory();
+        }
+
+        function useSelectedItem() {
+            if (currentTab !== 'sharditems' || selectedItemId === null) return;
+            let idx = game.shardItems.findIndex(i => i.id === selectedItemId);
+            if (idx === -1) return;
+
+            let item = game.shardItems[idx];
+            let now = Date.now();
+
+            if (item.type === 'potion') {
+                game.potionEndTime = Math.max(now, game.potionEndTime) + (5 * 60 * 1000);
+                showToast("🧪 10x Money Potion activated for 5 mins!", "#f72585");
+            } else if (item.type === 'catfood') {
+                game.catFoodEndTime = Math.max(now, game.catFoodEndTime) + (10 * 60 * 1000);
+                showToast("🐟 Premium Cat Food activated for 10 mins (2x Ores)!", "#ffaa00");
+            }
+
+            game.shardItems.splice(idx, 1);
+            selectedItemId = null;
+            saveGame(false);
             renderInventory();
         }
 
@@ -1277,42 +1330,48 @@
                         grid.appendChild(card);
                     });
                 }
-            } else if (currentTab === 'shards') {
-                document.getElementById('invSectionTitle').textContent = `💠 Shard Shop Purchases & Balance`;
-                document.getElementById('invSubtext').textContent = 'Your current shard balance and items/buffs purchased from the Shard Shop.';
+            } else if (currentTab === 'sharditems') {
+                document.getElementById('invSectionTitle').textContent = `🧪 Shard Items (${game.shardItems.length})`;
+                document.getElementById('invSubtext').textContent = 'Click a purchased shard item to use it.';
 
-                let shardHtml = `
-                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 20px; cursor: default; margin-bottom: 10px;">
+                if (game.shardItems.length === 0) {
+                    grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">No items in inventory. Buy items from the Shard Shop!</p>';
+                } else {
+                    game.shardItems.forEach(item => {
+                        let isSelected = selectedItemId === item.id;
+                        const card = document.createElement('div');
+                        card.className = 'inv-card' + (isSelected ? ' selected' : '');
+                        card.onmousedown = () => selectItem(item.id);
+                        card.innerHTML = `
+                            <strong style="color: #00ffcc; font-size: 1.05rem;">${item.name}</strong>
+                            <div style="font-size: 0.85rem; color: #aaa; margin-top: 6px;">${item.desc}</div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } else if (currentTab === 'shards') {
+                document.getElementById('invSectionTitle').textContent = `💠 Shard Balance`;
+                document.getElementById('invSubtext').textContent = 'Your current shard balance.';
+
+                grid.innerHTML = `
+                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 20px; cursor: default;">
                         <div style="font-size: 2.2rem; margin-bottom: 5px;">💠</div>
                         <h3 style="margin: 0 0 5px 0; color: #00b4d8;">Total Shards: ${formatNumber(game.shards)}</h3>
                         <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Earn more using the Shards Clicker panel on the main screen!</p>
                     </div>
                 `;
-
-                if (game.purchasedShopItems.length === 0) {
-                    shardHtml += '<p style="color: #777; grid-column: 1 / -1; text-align: center;">No items purchased from Shard Shop yet.</p>';
-                } else {
-                    game.purchasedShopItems.forEach(item => {
-                        shardHtml += `
-                            <div class="inv-card" style="cursor: default;">
-                                <strong style="color: #00ffcc; font-size: 1rem;">${item.name}</strong>
-                                <div style="font-size: 0.85rem; color: #aaa; margin-top: 4px;">${item.desc}</div>
-                            </div>
-                        `;
-                    });
-                }
-                grid.innerHTML = shardHtml;
             }
 
             const infoEl = document.getElementById('selectedInfo');
             const btnsEl = document.getElementById('actionButtons');
+            const useBtn = document.getElementById('useActionBtn');
             const equipBtn = document.getElementById('equipActionBtn');
             const favBtn = document.getElementById('favActionBtn');
             const sellBtn = document.getElementById('sellActionBtn');
 
             if (currentTab === 'shards') {
                 btnsEl.style.display = 'none';
-                infoEl.textContent = 'Shard shop purchases history.';
+                infoEl.textContent = 'Shard balance overview.';
                 return;
             }
 
@@ -1321,10 +1380,14 @@
                 btnsEl.style.display = 'none';
             } else {
                 btnsEl.style.display = 'flex';
-                favBtn.style.display = 'inline-block';
-                sellBtn.style.display = 'inline-block';
+                useBtn.style.display = currentTab === 'sharditems' ? 'inline-block' : 'none';
+                favBtn.style.display = (currentTab === 'ores' || currentTab === 'cats') ? 'inline-block' : 'none';
+                sellBtn.style.display = (currentTab === 'ores' || currentTab === 'cats') ? 'inline-block' : 'none';
 
-                if (currentTab === 'ores') {
+                if (currentTab === 'sharditems') {
+                    equipBtn.style.display = 'none';
+                    infoEl.textContent = 'Click Use to activate this item immediately.';
+                } else if (currentTab === 'ores') {
                     equipBtn.style.display = 'none';
                     let ore = game.ores.find(o => o.id === selectedItemId);
                     if (!ore) {
@@ -1345,7 +1408,7 @@
                         sellBtn.disabled = false;
                         sellBtn.textContent = `Sell (${formatNumber(val)} 💵)`;
                     }
-                } else {
+                } else if (currentTab === 'cats') {
                     let cat = game.cats.find(c => c.id === selectedItemId);
                     if (!cat) {
                         selectedItemId = null;
