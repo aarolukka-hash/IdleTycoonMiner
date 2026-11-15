@@ -1,43 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3aToY8vSHq9qGpYnZtlCUQ-_jnXwg96s",
-            authDomain: "tycoonidleminerbysushi.firebaseapp.com",
-            projectId: "tycoonidleminerbysushi",
-            storageBucket: "tycoonidleminerbysushi.firebasestorage.app",
-            messagingSenderId: "486285275822",
-            appId: "1:486285275822:web:045010b7f313110ebaf33f"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.saveGameToFirebase = async function(gameData) {
-            try {
-                await setDoc(doc(db, "players", gameData.playerId), gameData);
-            } catch (e) {
-                console.error("Tallennus epäonnistui:", e);
-            }
-        };
-
-        window.loadGameFromFirebase = async function(playerId) {
-            try {
-                const docRef = doc(db, "players", playerId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                }
-            } catch (e) {
-                console.error("Lataus epäonnistui:", e);
-            }
-            return null;
-        };
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>😺 TycoonIdleMiner</title>
@@ -535,7 +498,7 @@
     <div class="top-bar">
         <button class="inv-open-btn" onclick="openInventory()">🎒 Inventory</button>
         <button class="shop-open-btn" id="shardShopBtn" onclick="openShardShop()" disabled>🛒 Shard Shop (Rebirth 5)</button>
-        <button class="scoreboard-open-btn" onclick="openScoreboard()">🏆 Global Scoreboard</button>
+        <button class="scoreboard-open-btn" onclick="openScoreboard()">🏆 Scoreboard</button>
         <button style="background-color: #4361ee; color: white; width: auto;" onclick="manualSaveGame()">💾 Save Game</button>
         <button style="background-color: #ef233c; color: white; width: auto;" onclick="resetGame()">🗑️ Hard Reset</button>
     </div>
@@ -590,7 +553,7 @@
     <div class="modal-overlay" id="scoreboardModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>🏆 Global Scoreboard (Top 100)</h2>
+                <h2>🏆 Scoreboard</h2>
                 <button class="close-btn" onclick="closeScoreboard()">✖ Close</button>
             </div>
             <div class="modal-body">
@@ -602,13 +565,13 @@
 
                 <div class="main-inv-area">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 id="sbSectionTitle" style="margin: 0; color: #ffb703;">💵 Top 100 Players by Money</h3>
+                        <h3 id="sbSectionTitle" style="margin: 0; color: #ffb703;">💵 Top Players by Money</h3>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="font-size: 0.85rem; color: #aaa;">Your Name:</label>
                             <input type="text" id="playerNameInput" value="Pelaaja" onchange="updatePlayerName(this.value)" style="width: 130px; margin-top: 0; padding: 5px 8px; font-size: 0.9rem;">
                         </div>
                     </div>
-                    <p id="sbSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 10px 0;">Rankings show active players and their best active cat & pickaxe.</p>
+                    <p id="sbSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 10px 0;">Rankings show your local high scores and best cats.</p>
 
                     <div style="overflow-y: auto; flex: 1;">
                         <table class="sb-table">
@@ -830,9 +793,6 @@
         function saveGame(silent = true) {
             localStorage.setItem('tycoonIdleMinerSave', JSON.stringify(game));
             updateGlobalLeaderboard();
-            if (window.saveGameToFirebase) {
-                window.saveGameToFirebase(game);
-            }
             if (!silent) {
                 showToast("💾 Game saved successfully!", "#4361ee");
             }
@@ -884,7 +844,7 @@
             let board = getGlobalLeaderboard();
             let nameTaken = board.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.id !== game.playerId);
             if (nameTaken) {
-                alert("Tämä nimi on jo käytössä toisella pelaajalla! Valitse toinen nimi.");
+                alert("Tämä nimi on jo käytössä! Valitse toinen nimi.");
                 document.getElementById('playerNameInput').value = game.playerName;
                 return;
             }
@@ -944,7 +904,7 @@
             `;
 
             if (board.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #777;">No players on the leaderboard yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #777;">No players on the scoreboard yet.</td></tr>`;
                 return;
             }
 
