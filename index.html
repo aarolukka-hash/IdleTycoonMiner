@@ -863,7 +863,7 @@
             { id: "rebirth_5", title: "Uskollinen kaivaja", desc: "Suorita 5 Rebirthiä.", check: () => game.rebirths >= 5 },
             { id: "collector_5cats", title: "Kissalauma", desc: "Omista vähintään 5 kissaa kerralla.", check: () => game.cats.length >= 5 },
             { id: "shard_collector", title: "Sirpaleiden herra", desc: "Hanki ensimmäinen sirpaleesi (Shard).", check: () => game.shards >= 1 },
-            { id: "dog_fighter", title: "Koirien pelko", desc: "Voita taistelu koiraa vastaan.", check: () => false /* Päivitetään taistelun voitolla */ }
+            { id: "dog_fighter", title: "Koirien pelko", desc: "Voita taistelu koiraa vastaan.", check: () => game.achievements['dog_fighter'] === true }
         ];
 
         const pickaxes = [
@@ -1471,6 +1471,9 @@
                 game.shardItems.splice(itemIdx, 1);
             }
 
+            // Nollataan odottava upgrader-tila, jotta napit poistuvat käytön jälkeen
+            window.pendingToolUpgraderId = null;
+
             isModalAnimating = true;
             const animModal = document.getElementById('animModal');
             const content = document.getElementById('animContent');
@@ -1514,11 +1517,11 @@
         }
 
         function promptToolUpgradeSelection(itemId) {
-            switchTab('cats');
-            closeShardShop();
-            showToast("👉 Select a cat in your inventory to use the Tool Upgrader!", "#00b4d8");
             window.pendingToolUpgraderId = itemId;
-            renderInventory();
+            closeShardShop();
+            openInventory();
+            switchTab('cats');
+            showToast("👉 Valitse kissa inventaariostasi, johon haluat käyttää Tool Upgraderin!", "#00b4d8");
         }
 
         function rollSingleCat() {
@@ -2259,7 +2262,7 @@
                 
                 let hasToolUpgraderInInv = game.shardItems.some(i => i.type === 'toolupgrader');
                 let upgraderPrompt = (window.pendingToolUpgraderId && hasToolUpgraderInInv) 
-                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Click "Tool Upgrader" on any eligible cat below to use your item!</div>` 
+                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Klikkaa alta sitä kissaa, jonka työkalua haluat parantaa!</div>` 
                     : '';
 
                 document.getElementById('invSectionTitle').textContent = `🐱 Your Cats (Mining: ${eqCats}/${maxCats})`;
@@ -2281,7 +2284,7 @@
                         let nameColorStyle = cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 6px #00ffcc;' : 'color: #fff;';
 
                         let showUpgraderBtn = (window.pendingToolUpgraderId && hasToolUpgraderInInv && tool && tool.rank < 6);
-                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Tool Upgrader</button>` : '';
+                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Käytä Upgrader</button>` : '';
 
                         catsHtml += `
                             <div class="inv-card${isSelected ? ' selected' : ''}${cat.equipped && !isSword ? ' equipped' : ''}" onmousedown="selectItem(${cat.id})">
