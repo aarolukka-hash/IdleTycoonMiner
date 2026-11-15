@@ -452,7 +452,7 @@
             margin: 0 0 8px 0;
             color: #00ffcc;
         }
-        select {
+        select, input[type="text"] {
             background: #181818;
             color: #fff;
             border: 1px solid #555;
@@ -579,11 +579,14 @@
 
                 <!-- Right Content Area for Scoreboard -->
                 <div class="main-inv-area">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <h3 id="sbSectionTitle" style="margin: 0; color: #ffb703;">💵 Top 100 Players by Money</h3>
-                        <span id="sbTimerText" style="font-size: 0.8rem; color: #888;">Updating in 60s</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 0.85rem; color: #aaa;">Your Name:</label>
+                            <input type="text" id="playerNameInput" value="Pelaaja" onchange="updatePlayerName(this.value)" style="width: 130px; margin-top: 0; padding: 5px 8px; font-size: 0.9rem;">
+                        </div>
                     </div>
-                    <p id="sbSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 10px 0;">Unified global rankings featuring active miners and their cats.</p>
+                    <p id="sbSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 10px 0;">Rankings show active players and their best active cat & pickaxe.</p>
 
                     <div style="overflow-y: auto; flex: 1;">
                         <table class="sb-table">
@@ -684,7 +687,7 @@
 
     <script>
         let game = {
-            playerName: "You",
+            playerName: "Pelaaja",
             money: 0,
             cpsLevel: 1,
             rebirths: 0,
@@ -722,69 +725,10 @@
             { name: "Internal", baseVal: 10000, weight: 0.5, color: "#ff007f" }
         ];
 
-        // Todellisten pelaajien ja heidän aktiivisten kissojensa nimet globaalille scoreboardille
-        const globalTopPlayersBase = [
-            { name: "PurrMaster", cat: "Golden Whiskers (Diamond Pickaxe)", money: 50000000, shards: 1250, rebirths: 45 },
-            { name: "CatMinerPro", cat: "Diamond Shadow (Internal Pickaxe)", money: 35000000, shards: 980, rebirths: 38 },
-            { name: "NekoTycoon", cat: "Internal Garfield (Internal Pickaxe)", money: 20000000, shards: 750, rebirths: 30 },
-            { name: "MeowKing", cat: "Golden Mittens (Diamond Pickaxe)", money: 12000000, shards: 500, rebirths: 22 },
-            { name: "ClawDigger", cat: "Diamond Tiger (Iron Pickaxe)", money: 8500000, shards: 340, rebirths: 18 },
-            { name: "PawPower", cat: "Normal Simba (Stone Pickaxe)", money: 5000000, shards: 220, rebirths: 15 },
-            { name: "KittyLover", cat: "Golden Luna (Iron Pickaxe)", money: 3200000, shards: 150, rebirths: 12 },
-            { name: "FluffyMiner", cat: "Diamond Nala (Diamond Pickaxe)", money: 2100000, shards: 95, rebirths: 9 },
-            { name: "WhiskerLord", cat: "Internal Oliver (Internal Pickaxe)", money: 1500000, shards: 60, rebirths: 7 },
-            { name: "Pawsitive", cat: "Normal Felix (Wooden Pickaxe)", money: 950000, shards: 40, rebirths: 5 }
-        ];
-
-        // Generoidaan loput 90 pelaajaa tasaisesti jotta saadaan vakaa Top 100 -lista kaikille samanlaisena
-        function generateUnifiedGlobalScoreboard() {
-            let listMoney = [];
-            let listShards = [];
-            let listRebirths = [];
-
-            globalTopPlayersBase.forEach(p => {
-                listMoney.push({ name: `${p.name} (${p.cat})`, val: p.money, isPlayer: false });
-                listShards.push({ name: `${p.name} (${p.cat})`, val: p.shards, isPlayer: false });
-                listRebirths.push({ name: `${p.name} (${p.cat})`, val: p.rebirths, isPlayer: false });
-            });
-
-            // Täytetään loput 90 sijaa deterministisillä arvoilla, jotta kaikilla on sama lista
-            for (let i = 11; i <= 100; i++) {
-                let botName = `MinerCat${i}`;
-                let botCat = `Normal Whiskers (Wooden Pickaxe)`;
-                let mVal = Math.max(10, 900000 - (i * 8500));
-                let sVal = Math.max(0, 35 - Math.floor(i / 3));
-                let rVal = Math.max(0, 5 - Math.floor(i / 20));
-
-                listMoney.push({ name: `${botName} (${botCat})`, val: mVal, isPlayer: false });
-                listShards.push({ name: `${botName} (${botCat})`, val: sVal, isPlayer: false });
-                listRebirths.push({ name: `${botName} (${botCat})`, val: rVal, isPlayer: false });
-            }
-
-            // Lisätään pelaaja listaan omien pisteidensä mukaan
-            let catInfo = getBestActiveCatInfo();
-            listMoney.push({ name: `${game.playerName} (${catInfo})`, val: game.money, isPlayer: true });
-            listShards.push({ name: `${game.playerName} (${catInfo})`, val: game.shards, isPlayer: true });
-            listRebirths.push({ name: `${game.playerName} (${catInfo})`, val: game.rebirths, isPlayer: true });
-
-            // Lajitellaan ja rajataan top 100
-            listMoney.sort((a, b) => b.val - a.val);
-            listShards.sort((a, b) => b.val - a.val);
-            listRebirths.sort((a, b) => b.val - a.val);
-
-            return {
-                money: listMoney.slice(0, 100),
-                shards: listShards.slice(0, 100),
-                rebirths: listRebirths.slice(0, 100)
-            };
-        }
-
         let currentTab = 'ores';
         let selectedItemId = null;
         let isOpeningBox = false;
-
         let sbTab = 'money';
-        let sbSecondsLeft = 60;
 
         function formatNumber(num) {
             if (num === undefined || isNaN(num)) return "0";
@@ -859,6 +803,9 @@
                 try {
                     let parsed = JSON.parse(saved);
                     game = { ...game, ...parsed };
+                    if (game.playerName) {
+                        document.getElementById('playerNameInput').value = game.playerName;
+                    }
                 } catch (e) {
                     console.error("Failed to load save data", e);
                 }
@@ -879,24 +826,14 @@
             saveGame(true);
         }, 5000);
 
-        // 60 sekunnin ajastin scoreboardin päivitykselle
-        setInterval(() => {
-            sbSecondsLeft--;
-            if (sbSecondsLeft <= 0) {
-                sbSecondsLeft = 60;
-                if (document.getElementById('scoreboardModal').style.display === 'flex') {
-                    renderScoreboard();
-                }
-            }
-            let timerEl = document.getElementById('sbTimerText');
-            if (timerEl) {
-                timerEl.textContent = `Updating in ${sbSecondsLeft}s`;
-            }
-        }, 1000);
+        function updatePlayerName(newName) {
+            game.playerName = newName.trim() || "Pelaaja";
+            saveGame(true);
+            renderScoreboard();
+        }
 
         function openScoreboard() {
             document.getElementById('scoreboardModal').style.display = 'flex';
-            sbSecondsLeft = 60;
             renderScoreboard();
         }
 
@@ -923,8 +860,18 @@
             const header = document.getElementById('sbTableHeader');
             tbody.innerHTML = '';
 
-            let unifiedData = generateUnifiedGlobalScoreboard();
-            let dataList = unifiedData[sbTab];
+            let catInfo = getBestActiveCatInfo();
+            let playerEntry = {
+                name: `${game.playerName} (${catInfo})`,
+                money: game.money,
+                shards: game.shards,
+                rebirths: game.rebirths
+            };
+
+            // Koska olet tällä hetkellä ainoa pelaaja tässä paikallisessa instanssissa, taulukossa näkyy vain sinä.
+            // (Tähän listaan voi myöhemmin kytkeä oikean verkkorajapinnan, kun oikeita pelaajia liittyy mukaan.)
+            let dataList = [playerEntry];
+
             let valueLabel = sbTab === 'money' ? 'Money' : (sbTab === 'shards' ? 'Shards' : 'Rebirths');
             let currencyIcon = sbTab === 'money' ? '💵' : (sbTab === 'shards' ? '💠' : '🔄');
 
@@ -936,14 +883,15 @@
 
             dataList.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                if (row.isPlayer) {
-                    tr.style.backgroundColor = '#1e3028';
-                    tr.style.borderLeft = '4px solid #00ffcc';
-                }
+                tr.style.backgroundColor = '#1e3028';
+                tr.style.borderLeft = '4px solid #00ffcc';
+                
+                let valToShow = sbTab === 'money' ? row.money : (sbTab === 'shards' ? row.shards : row.rebirths);
+
                 tr.innerHTML = `
                     <td>#${index + 1}</td>
-                    <td>${row.name} ${row.isPlayer ? '<strong style="color:#00ffcc;">(YOU)</strong>' : ''}</td>
-                    <td>${formatNumber(row.val)} ${currencyIcon}</td>
+                    <td>${row.name} <strong style="color:#00ffcc;">(YOU)</strong></td>
+                    <td>${formatNumber(valToShow)} ${currencyIcon}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1042,7 +990,7 @@
                 game.rebirths++;
                 game.rebirthCost *= 5;
                 game.ores = [];
-                saveGame(false); // Iso asia -> ilmoittaa tallennuksesta
+                saveGame(false);
 
                 let unlocks = [`<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`];
                 if (game.rebirths === 1) {
@@ -1145,7 +1093,7 @@
 
             showToast(`🧪 <strong>10x Money Potion</strong> activated for 5 mins!`, "#f72585");
             updateShardShopUI();
-            saveGame(false); // Ostos shard shopista on iso asia -> tallennusilmoitus
+            saveGame(false);
         }
 
         function buyCatFood() {
@@ -1235,7 +1183,7 @@
                     }
                 }
 
-                let randomCatName = catNames[Math.floor(Math.random() * catNames.length)];
+                let randomCatName = ["Whiskers", "Shadow", "Mittens", "Tiger", "Simba", "Luna", "Felix", "Garfield", "Nala", "Oliver"][Math.floor(Math.random() * 10)];
                 let autoEquip = getEquippedCatsCount() < getMaxMiningCats();
                 
                 let newCat = {
@@ -1249,7 +1197,7 @@
                     equipped: autoEquip
                 };
                 game.cats.push(newCat);
-                saveGame(false); // Kissan saaminen on iso asia -> ilmoitus tallennuksesta
+                saveGame(false);
 
                 content.innerHTML = `
                     <h3 style="color: #ff007f; margin-top:0;">You got a Cat! 🎉</h3>
