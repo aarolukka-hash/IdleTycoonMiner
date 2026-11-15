@@ -76,13 +76,6 @@
         .shop-open-btn:hover:not(:disabled) {
             background-color: #b5179e;
         }
-        .scoreboard-open-btn {
-            background-color: #ffb703;
-            color: #121212;
-        }
-        .scoreboard-open-btn:hover {
-            background-color: #fb8500;
-        }
         .container {
             display: flex;
             gap: 20px;
@@ -457,27 +450,6 @@
             margin-top: 8px;
             width: 100%;
         }
-
-        .sb-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .sb-table th, .sb-table td {
-            padding: 10px 12px;
-            text-align: left;
-            border-bottom: 1px solid #333;
-            font-size: 0.95rem;
-        }
-        .sb-table th {
-            background-color: #252525;
-            color: #ffb703;
-            position: sticky;
-            top: 0;
-        }
-        .sb-table tr:hover {
-            background-color: #262626;
-        }
     </style>
 </head>
 <body>
@@ -498,7 +470,6 @@
     <div class="top-bar">
         <button class="inv-open-btn" onclick="openInventory()">🎒 Inventory</button>
         <button class="shop-open-btn" id="shardShopBtn" onclick="openShardShop()" disabled>🛒 Shard Shop (Rebirth 5)</button>
-        <button class="scoreboard-open-btn" onclick="openScoreboard()">🏆 Scoreboard</button>
         <button style="background-color: #4361ee; color: white; width: auto;" onclick="manualSaveGame()">💾 Save Game</button>
         <button style="background-color: #ef233c; color: white; width: auto;" onclick="resetGame()">🗑️ Hard Reset</button>
     </div>
@@ -548,46 +519,6 @@
 
     <div class="anim-overlay" id="animModal">
         <div class="anim-content" id="animContent"></div>
-    </div>
-
-    <div class="modal-overlay" id="scoreboardModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🏆 Scoreboard</h2>
-                <button class="close-btn" onclick="closeScoreboard()">✖ Close</button>
-            </div>
-            <div class="modal-body">
-                <div class="sidebar">
-                    <button class="tab-btn active" id="sbTabMoney" onclick="switchScoreboardTab('money')">💵 Top Money</button>
-                    <button class="tab-btn" id="sbTabShards" onclick="switchScoreboardTab('shards')">💠 Top Shards</button>
-                    <button class="tab-btn" id="sbTabRebirths" onclick="switchScoreboardTab('rebirths')">🔄 Top Rebirths</button>
-                </div>
-
-                <div class="main-inv-area">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 id="sbSectionTitle" style="margin: 0; color: #ffb703;">💵 Top Players by Money</h3>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label style="font-size: 0.85rem; color: #aaa;">Your Name:</label>
-                            <input type="text" id="playerNameInput" value="Pelaaja" onchange="updatePlayerName(this.value)" style="width: 130px; margin-top: 0; padding: 5px 8px; font-size: 0.9rem;">
-                        </div>
-                    </div>
-                    <p id="sbSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 10px 0;">Rankings show your local high scores and best cats.</p>
-
-                    <div style="overflow-y: auto; flex: 1;">
-                        <table class="sb-table">
-                            <thead>
-                                <tr id="sbTableHeader">
-                                    <th>Rank</th>
-                                    <th>Player Name (Best Active Cat & Pickaxe)</th>
-                                    <th>Money</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sbTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="modal-overlay" id="shardShopModal">
@@ -662,8 +593,6 @@
 
     <script>
         let game = {
-            playerId: "player_" + Math.random().toString(36).substring(2, 9),
-            playerName: "Pelaaja",
             money: 0,
             cpsLevel: 1,
             rebirths: 0,
@@ -704,7 +633,6 @@
         let currentTab = 'ores';
         let selectedItemId = null;
         let isOpeningBox = false;
-        let sbTab = 'money';
 
         function formatNumber(num) {
             if (num === undefined || isNaN(num)) return "0";
@@ -736,19 +664,6 @@
             return game.cats.filter(c => c.equipped).length;
         }
 
-        function getBestActiveCatInfo() {
-            let activeCats = game.cats.filter(c => c.equipped);
-            if (activeCats.length === 0) {
-                return "Resting Cat (Wooden Pickaxe)";
-            }
-            let bestCat = activeCats.reduce((prev, current) => {
-                let pPrev = pickaxes.findIndex(p => p.name === prev.pickaxe);
-                let pCurr = pickaxes.findIndex(p => p.name === current.pickaxe);
-                return pCurr > pPrev ? current : prev;
-            });
-            return `${bestCat.rarity || 'Normal'} ${bestCat.name} (${bestCat.pickaxe})`;
-        }
-
         function showToast(message, color = "#00ffcc") {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -761,38 +676,8 @@
             }, 3000);
         }
 
-        function getGlobalLeaderboard() {
-            let stored = localStorage.getItem('tycoonIdleGlobalLeaderboard');
-            let board = stored ? JSON.parse(stored) : [];
-            return board;
-        }
-
-        function updateGlobalLeaderboard() {
-            let board = getGlobalLeaderboard();
-            let catInfo = getBestActiveCatInfo();
-            let playerEntry = {
-                id: game.playerId,
-                name: game.playerName,
-                catInfo: catInfo,
-                money: game.money,
-                shards: game.shards,
-                rebirths: game.rebirths,
-                lastActive: Date.now()
-            };
-
-            let index = board.findIndex(p => p.id === game.playerId);
-            if (index !== -1) {
-                board[index] = playerEntry;
-            } else {
-                board.push(playerEntry);
-            }
-
-            localStorage.setItem('tycoonIdleGlobalLeaderboard', JSON.stringify(board));
-        }
-
         function saveGame(silent = true) {
             localStorage.setItem('tycoonIdleMinerSave', JSON.stringify(game));
-            updateGlobalLeaderboard();
             if (!silent) {
                 showToast("💾 Game saved successfully!", "#4361ee");
             }
@@ -808,20 +693,14 @@
                 try {
                     let parsed = JSON.parse(saved);
                     game = { ...game, ...parsed };
-                    if (game.playerName) {
-                        document.getElementById('playerNameInput').value = game.playerName;
-                    }
                 } catch (e) {
                     console.error("Failed to load save data", e);
                 }
             }
-            updateGlobalLeaderboard();
         }
 
         function resetGame() {
             if (confirm("Are you sure you want to reset all progress? This cannot be undone!")) {
-                let board = getGlobalLeaderboard().filter(p => p.id !== game.playerId);
-                localStorage.setItem('tycoonIdleGlobalLeaderboard', JSON.stringify(board));
                 localStorage.removeItem('tycoonIdleMinerSave');
                 location.reload();
             }
@@ -832,101 +711,6 @@
         setInterval(() => {
             saveGame(true);
         }, 5000);
-
-        function updatePlayerName(newName) {
-            newName = newName.trim();
-            if (!newName) {
-                alert("Nimi ei voi olla tyhjä!");
-                document.getElementById('playerNameInput').value = game.playerName;
-                return;
-            }
-
-            let board = getGlobalLeaderboard();
-            let nameTaken = board.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.id !== game.playerId);
-            if (nameTaken) {
-                alert("Tämä nimi on jo käytössä! Valitse toinen nimi.");
-                document.getElementById('playerNameInput').value = game.playerName;
-                return;
-            }
-
-            game.playerName = newName;
-            saveGame(true);
-            renderScoreboard();
-        }
-
-        function openScoreboard() {
-            document.getElementById('scoreboardModal').style.display = 'flex';
-            updateGlobalLeaderboard();
-            renderScoreboard();
-        }
-
-        function closeScoreboard() {
-            document.getElementById('scoreboardModal').style.display = 'none';
-        }
-
-        function switchScoreboardTab(tab) {
-            sbTab = tab;
-            document.getElementById('sbTabMoney').classList.toggle('active', tab === 'money');
-            document.getElementById('sbTabShards').classList.toggle('active', tab === 'shards');
-            document.getElementById('sbTabRebirths').classList.toggle('active', tab === 'rebirths');
-
-            let title = "💵 Top Players by Money";
-            if (tab === 'shards') title = "💠 Top Players by Shards";
-            if (tab === 'rebirths') title = "🔄 Top Players by Rebirths";
-            document.getElementById('sbSectionTitle').textContent = title;
-
-            renderScoreboard();
-        }
-
-        function renderScoreboard() {
-            updateGlobalLeaderboard();
-            const tbody = document.getElementById('sbTableBody');
-            const header = document.getElementById('sbTableHeader');
-            tbody.innerHTML = '';
-
-            let board = getGlobalLeaderboard();
-
-            if (sbTab === 'money') {
-                board.sort((a, b) => b.money - a.money);
-            } else if (sbTab === 'shards') {
-                board.sort((a, b) => b.shards - a.shards);
-            } else if (sbTab === 'rebirths') {
-                board.sort((a, b) => b.rebirths - a.rebirths);
-            }
-
-            let valueLabel = sbTab === 'money' ? 'Money' : (sbTab === 'shards' ? 'Shards' : 'Rebirths');
-            let currencyIcon = sbTab === 'money' ? '💵' : (sbTab === 'shards' ? '💠' : '🔄');
-
-            header.innerHTML = `
-                <th>Rank</th>
-                <th>Player Name (Best Active Cat & Pickaxe)</th>
-                <th>${valueLabel}</th>
-            `;
-
-            if (board.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #777;">No players on the scoreboard yet.</td></tr>`;
-                return;
-            }
-
-            board.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                let isYou = row.id === game.playerId;
-
-                if (isYou) {
-                    tr.style.backgroundColor = '#1e3028';
-                    tr.style.borderLeft = '4px solid #00ffcc';
-                }
-
-                let valToShow = sbTab === 'money' ? row.money : (sbTab === 'shards' ? row.shards : row.rebirths);
-
-                tr.innerHTML = `
-                    <td>#${index + 1}</td>
-                    <td>${row.name} (${row.catInfo}) ${isYou ? '<strong style="color:#00ffcc;">(YOU)</strong>' : ''}</td>
-                    <td>${formatNumber(valToShow)} ${currencyIcon}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
 
         let lastTick = Date.now();
         setInterval(() => {
