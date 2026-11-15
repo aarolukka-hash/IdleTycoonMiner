@@ -494,13 +494,9 @@
         <!-- Cat Boxes Panel -->
         <div class="panel">
             <h2>📦 Cat Boxes</h2>
-            <p>Requires at least 1 Rebirth! Equipped cats mine ores every 5 mins. Every 5 Rebirths unlocks +1 slot.</p>
+            <p>Requires at least 1 Rebirth! Equipped cats mine ores every 5 mins.</p>
             <div>
                 <button id="boxBtn" onclick="startOpeningBox()" disabled>Locked (Rebirth 1)</button>
-                <p style="margin-top: 10px; color: #aaa; font-size: 0.85rem;">
-                    Slots: <strong id="equippedCountDisplay" style="color: #00ffcc;">0 / 1</strong><br>
-                    <span style="font-size: 0.75rem; color: #777;">(Next at Rebirth <span id="nextSlotRebirth">5</span>)</span>
-                </p>
             </div>
         </div>
 
@@ -514,8 +510,13 @@
 
     <!-- ACTIVE MINING CATS ON MAIN SCREEN -->
     <div class="active-mining-container">
-        <h2 style="margin-top:0; color: #00ffcc;">⛏️ Active Mining Cats</h2>
-        <p style="font-size: 0.85rem; color: #aaa; margin: 0 0 10px 0;">Equipped cats currently working for you:</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin:0; color: #00ffcc;">⛏️ Active Mining Cats</h2>
+            <div style="color: #aaa; font-size: 0.95rem;">
+                Slots: <strong id="equippedCountDisplay" style="color: #00ffcc;">0 / 1</strong> (Next at Rebirth <span id="nextSlotRebirth">5</span>)
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #aaa; margin: 8px 0 10px 0;">Equipped cats currently working for you:</p>
         <div class="mining-grid" id="mainMiningGrid">
             <p style="color: #666; font-size: 0.9rem; margin: 0;">No cats currently equipped. Go to Inventory to equip cats!</p>
         </div>
@@ -618,7 +619,8 @@
             potionEndTime: 0,
             catFoodEndTime: 0,
             cats: [],
-            ores: []
+            ores: [],
+            purchasedShopItems: [] // Tänne tallennetaan ostetut shard shop tuotteet
         };
 
         const pickaxes = [
@@ -764,6 +766,8 @@
                     });
                 } else if (currentTab === 'ores' && oreMinedThisTick) {
                     renderInventory();
+                } else if (currentTab === 'shards') {
+                    renderInventory(); // Päivittää shard-aikalaskurit reaaliajassa
                 }
             }
         }, 100);
@@ -875,6 +879,14 @@
             game.shards -= 100;
             let now = Date.now();
             game.potionEndTime = Math.max(now, game.potionEndTime) + (5 * 60 * 1000);
+            
+            // Lisätään ostohistorioihin / aktiivisiin buffeihin
+            game.purchasedShopItems.push({
+                name: "🧪 10x Money Potion",
+                desc: "Multiplies money by 10x",
+                timeAdded: now
+            });
+
             showToast(`🧪 <strong>10x Money Potion</strong> activated for 5 mins!`, "#f72585");
             updateShardShopUI();
         }
@@ -884,6 +896,13 @@
             game.shards -= 100;
             let now = Date.now();
             game.catFoodEndTime = Math.max(now, game.catFoodEndTime) + (10 * 60 * 1000);
+
+            game.purchasedShopItems.push({
+                name: "🐟 Premium Cat Food",
+                desc: "Doubles cat mined ores (2x)",
+                timeAdded: now
+            });
+
             showToast(`🐟 <strong>Premium Cat Food</strong> activated for 10 mins (2x Ores)!`, "#ffaa00");
             updateShardShopUI();
         }
@@ -904,6 +923,13 @@
                 let nextPickaxe = pickaxes[currentIdx + 1];
                 cat.pickaxe = nextPickaxe.name;
                 cat.color = nextPickaxe.color;
+
+                game.purchasedShopItems.push({
+                    name: `⚒️ Upgraded Pickaxe (${cat.name})`,
+                    desc: `Upgraded to ${nextPickaxe.name}`,
+                    timeAdded: Date.now()
+                });
+
                 showToast(`🎉 Success! <strong>${cat.name}</strong>'s tool upgraded to <strong style="color:${nextPickaxe.color}">${nextPickaxe.name}</strong>!`, "#00ffcc");
             } else {
                 showToast(`💥 Upgrade failed! (25% chance)`, "#ff4444");
@@ -1226,17 +1252,30 @@
                     });
                 }
             } else if (currentTab === 'shards') {
-                document.getElementById('invSectionTitle').textContent = `💠 Shards Balance`;
-                document.getElementById('invSubtext').textContent = 'Your collected magical shards used in the Shard Shop.';
+                document.getElementById('invSectionTitle').textContent = `💠 Shard Shop Purchases & Balance`;
+                document.getElementById('invSubtext').textContent = 'Your current shard balance and items/buffs purchased from the Shard Shop.';
 
-                grid.innerHTML = `
-                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 30px; cursor: default;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">💠</div>
-                        <h3 style="margin: 0 0 10px 0; color: #00b4d8;">Total Shards</h3>
-                        <div style="font-size: 2.5rem; font-weight: bold; color: #fff;">${formatNumber(game.shards)}</div>
-                        <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Earn more shards using the Shards Clicker panel on the main screen!</p>
+                let shardHtml = `
+                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 20px; cursor: default; margin-bottom: 10px;">
+                        <div style="font-size: 2.2rem; margin-bottom: 5px;">💠</div>
+                        <h3 style="margin: 0 0 5px 0; color: #00b4d8;">Total Shards: ${formatNumber(game.shards)}</h3>
+                        <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Earn more using the Shards Clicker panel on the main screen!</p>
                     </div>
                 `;
+
+                if (game.purchasedShopItems.length === 0) {
+                    shardHtml += '<p style="color: #777; grid-column: 1 / -1; text-align: center;">No items purchased from Shard Shop yet.</p>';
+                } else {
+                    game.purchasedShopItems.forEach(item => {
+                        shardHtml += `
+                            <div class="inv-card" style="cursor: default;">
+                                <strong style="color: #00ffcc; font-size: 1rem;">${item.name}</strong>
+                                <div style="font-size: 0.85rem; color: #aaa; margin-top: 4px;">${item.desc}</div>
+                            </div>
+                        `;
+                    });
+                }
+                grid.innerHTML = shardHtml;
             }
 
             const infoEl = document.getElementById('selectedInfo');
@@ -1247,7 +1286,7 @@
 
             if (currentTab === 'shards') {
                 btnsEl.style.display = 'none';
-                infoEl.textContent = 'Shards are currency for the Shard Shop.';
+                infoEl.textContent = 'Shard shop purchases history.';
                 return;
             }
 
