@@ -79,7 +79,7 @@
         .container {
             display: flex;
             gap: 20px;
-            max-width: 900px;
+            max-width: 1100px;
             width: 100%;
             flex-wrap: wrap;
             justify-content: center;
@@ -90,7 +90,7 @@
             padding: 20px;
             border-radius: 10px;
             flex: 1;
-            min-width: 300px;
+            min-width: 260px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
@@ -134,30 +134,20 @@
         .rebirth-btn:hover:not(:disabled) {
             background-color: #d92552;
         }
-
-        /* Isot ja pienemmät erikoisnapit */
         .shard-click-btn {
             background-color: #00b4d8;
             color: #121212;
-            font-size: 1.15rem;
-            padding: 16px 20px;
-            margin-top: 15px;
-            box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
+            font-size: 1.05rem;
+            padding: 14px 15px;
         }
         .shard-click-btn:hover:not(:disabled) {
             background-color: #0096c7;
-        }
-        .small-box-btn {
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            background-color: #00ffcc;
-            color: #121212;
         }
 
         /* Active Mining Cats Panel on Main Screen */
         .active-mining-container {
             margin-top: 20px;
-            max-width: 900px;
+            max-width: 1100px;
             width: 100%;
             background: #1e1e1e;
             padding: 20px;
@@ -489,33 +479,36 @@
     <div class="container">
         <!-- Upgrades Panel -->
         <div class="panel">
-            <div>
-                <h2>⚡ Upgrades</h2>
-                <p>Increase your income per second (+1 per upgrade, scaled by Multiplier)!</p>
-                <button id="upgradeBtn" onclick="buyUpgrade()">Buy Upgrade (Cost: <span id="upgradeCost">10</span> 💵)</button>
-            </div>
+            <h2>⚡ Upgrades</h2>
+            <p>Increase your income per second (+1 per upgrade, scaled by Multiplier)!</p>
+            <button id="upgradeBtn" onclick="buyUpgrade()">Buy Upgrade (Cost: <span id="upgradeCost">10</span> 💵)</button>
+        </div>
 
-            <div style="margin-top: 25px;">
-                <h2>🔄 Rebirth</h2>
-                <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>5x</strong> each time. Every 5 Rebirths unlocks +1 Mining Cat Slot!</p>
-                <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
+        <!-- Rebirth Panel -->
+        <div class="panel">
+            <h2>🔄 Rebirth</h2>
+            <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>5x</strong> each time.</p>
+            <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
+        </div>
+
+        <!-- Cat Boxes Panel -->
+        <div class="panel">
+            <h2>📦 Cat Boxes</h2>
+            <p>Requires at least 1 Rebirth! Equipped cats mine ores every 5 mins. Every 5 Rebirths unlocks +1 slot.</p>
+            <div>
+                <button id="boxBtn" onclick="startOpeningBox()" disabled>Locked (Rebirth 1)</button>
+                <p style="margin-top: 10px; color: #aaa; font-size: 0.85rem;">
+                    Slots: <strong id="equippedCountDisplay" style="color: #00ffcc;">0 / 1</strong><br>
+                    <span style="font-size: 0.75rem; color: #777;">(Next at Rebirth <span id="nextSlotRebirth">5</span>)</span>
+                </p>
             </div>
         </div>
 
-        <!-- Box & Shard Panel -->
+        <!-- Shards Panel -->
         <div class="panel">
-            <div>
-                <h2>📦 Cat Boxes & Shards</h2>
-                <p style="font-size: 0.9rem; margin-bottom: 8px;">Open boxes for cats or click for shards!</p>
-                <button class="small-box-btn" id="boxBtn" onclick="startOpeningBox()" disabled>Locked (Rebirth 1)</button>
-                <p style="margin-top: 6px; color: #aaa; font-size: 0.8rem;">
-                    Slots: <strong id="equippedCountDisplay" style="color: #00ffcc;">0 / 1</strong> (Next at <span id="nextSlotRebirth">5</span>)
-                </p>
-            </div>
-
-            <div>
-                <button class="shard-click-btn" id="shardClickBtn" onclick="clickShard()" disabled>💠 Locked (Rebirth 5)</button>
-            </div>
+            <h2>💠 Shards Clicker</h2>
+            <p>Requires Rebirth 5! Click repeatedly to earn magical shards for the Shard Shop.</p>
+            <button class="shard-click-btn" id="shardClickBtn" onclick="clickShard()" disabled>💠 Locked (Rebirth 5)</button>
         </div>
     </div>
 
@@ -793,10 +786,10 @@
 
                 let unlocks = [`<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`];
                 if (game.rebirths === 1) {
-                    unlocks.push(`Unlocked <strong>😺 Cat Boxes</strong>!`);
+                    unlocks.push(`Unlocked <strong>📦 Cat Boxes</strong>!`);
                 }
                 if (game.rebirths === 5) {
-                    unlocks.push(`Unlocked <strong>💠 Shards & Shard Shop</strong>!`);
+                    unlocks.push(`Unlocked <strong>💠 Shards Clicker & Shard Shop</strong>!`);
                 }
                 if (game.rebirths % 5 === 0) {
                     unlocks.push(`Unlocked <strong>+1 Mining Cat Slot</strong> (Total: ${getMaxMiningCats()})!`);
@@ -1241,7 +1234,7 @@
                         <div style="font-size: 3rem; margin-bottom: 10px;">💠</div>
                         <h3 style="margin: 0 0 10px 0; color: #00b4d8;">Total Shards</h3>
                         <div style="font-size: 2.5rem; font-weight: bold; color: #fff;">${formatNumber(game.shards)}</div>
-                        <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Earn more shards using the Shard Clicker button on the main screen!</p>
+                        <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Earn more shards using the Shards Clicker panel on the main screen!</p>
                     </div>
                 `;
             }
