@@ -581,7 +581,6 @@
             100% { filter: hue-rotate(360deg); }
         }
         
-        /* Saavutukset (Achievements) ruudukko */
         .ach-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -680,16 +679,13 @@
         <div class="anim-content" id="animContent"></div>
     </div>
 
-    <!-- Saavutukset Modal -->
     <div class="modal-overlay" id="achievementsModal">
         <div class="modal-content" style="height: auto; max-height: 80vh;">
             <div class="modal-header">
                 <h2>🏆 Achievements (<span id="unlockedAchCount">0</span> / <span id="totalAchCount">0</span>)</h2>
                 <button class="close-btn" onclick="closeAchievementsModal()">✖ Close</button>
             </div>
-            <div class="ach-grid" id="achievementsGrid">
-                <!-- Generoidaan dynaamisesti -->
-            </div>
+            <div class="ach-grid" id="achievementsGrid"></div>
         </div>
     </div>
 
@@ -797,7 +793,6 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <h3 id="invSectionTitle" style="margin: 0; color: #ff007f;">💎 Mined Ores</h3>
                         
-                        <!-- Ores Sorter -->
                         <div id="oreSorterContainer" style="display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 0.85rem; color: #aaa;">Sort:</span>
                             <select id="oreSortSelect" onchange="renderInventory()" style="margin: 0; width: auto; padding: 5px 10px; font-size: 0.85rem;">
@@ -806,12 +801,9 @@
                             </select>
                         </div>
 
-                        <!-- Cat Sorter -->
                         <div id="catSorterContainer" style="display: none; align-items: center; gap: 6px;">
                             <span style="font-size: 0.85rem; color: #aaa;">Sort:</span>
-                            <select id="catSortSelect" onchange="renderInventory()" style="margin: 0; width: auto; padding: 5px 10px; font-size: 0.85rem;">
-                                <!-- Vaihtoehdot dynaamisesti -->
-                            </select>
+                            <select id="catSortSelect" onchange="renderInventory()" style="margin: 0; width: auto; padding: 5px 10px; font-size: 0.85rem;"></select>
                         </div>
                         <button class="sell-all-btn" id="sellAllOresBtn" onclick="sellAllUnfavoritedOres()">Sell All (Non-Favorite)</button>
                     </div>
@@ -852,18 +844,17 @@
             cats: [],
             ores: [],
             shardItems: [],
-            achievements: {} // Tänne tallennetaan suoritetut saavutukset
+            achievements: {}
         };
 
-        // Saavutusten määrittely
         const achievementsList = [
-            { id: "first_dollar", title: "Ensimmäinen raha", desc: "Ansaitse ensimmäiset rahasi.", check: () => game.money >= 1 },
-            { id: "rich_1k", title: "Pikkurikastuja", desc: "Omista vähintään 1 000 💵.", check: () => game.money >= 1000 },
-            { id: "first_rebirth", title: "Uusi alku", desc: "Suorita ensimmäinen Rebirth.", check: () => game.rebirths >= 1 },
-            { id: "rebirth_5", title: "Uskollinen kaivaja", desc: "Suorita 5 Rebirthiä.", check: () => game.rebirths >= 5 },
-            { id: "collector_5cats", title: "Kissalauma", desc: "Omista vähintään 5 kissaa kerralla.", check: () => game.cats.length >= 5 },
-            { id: "shard_collector", title: "Sirpaleiden herra", desc: "Hanki ensimmäinen sirpaleesi (Shard).", check: () => game.shards >= 1 },
-            { id: "dog_fighter", title: "Koirien pelko", desc: "Voita taistelu koiraa vastaan.", check: () => game.achievements['dog_fighter'] === true }
+            { id: "first_dollar", title: "First Dollar", desc: "Earn your first money.", check: () => game.money >= 1 },
+            { id: "rich_1k", title: "Small Time Rich", desc: "Own at least 1,000 💵.", check: () => game.money >= 1000 },
+            { id: "first_rebirth", title: "New Beginning", desc: "Perform your first Rebirth.", check: () => game.rebirths >= 1 },
+            { id: "rebirth_5", title: "Dedicated Miner", desc: "Perform 5 Rebirths.", check: () => game.rebirths >= 5 },
+            { id: "collector_5cats", title: "Cat Pack", desc: "Own at least 5 cats at once.", check: () => game.cats.length >= 5 },
+            { id: "shard_collector", title: "Shard Lord", desc: "Acquire your first shard.", check: () => game.shards >= 1 },
+            { id: "dog_fighter", title: "Dog Terror", desc: "Win a battle against a dog.", check: () => game.achievements['dog_fighter'] === true }
         ];
 
         const pickaxes = [
@@ -991,12 +982,11 @@
             }, 3000);
         }
 
-        // Tarkistetaan saavutukset säännöllisesti
         function checkAchievements() {
             achievementsList.forEach(ach => {
                 if (!game.achievements[ach.id] && ach.check()) {
                     game.achievements[ach.id] = true;
-                    showToast(`🏆 Saavutus avattu: <strong>${ach.title}</strong>!`, "#3a86ff");
+                    showToast(`🏆 Achievement unlocked: <strong>${ach.title}</strong>!`, "#3a86ff");
                 }
             });
         }
@@ -1266,7 +1256,6 @@
             document.getElementById('shardShopModal').style.display = 'none';
         }
 
-        // Saavutukset Modal toiminnot
         function openAchievementsModal() {
             const modal = document.getElementById('achievementsModal');
             const grid = document.getElementById('achievementsGrid');
@@ -1471,7 +1460,6 @@
                 game.shardItems.splice(itemIdx, 1);
             }
 
-            // Nollataan odottava upgrader-tila, jotta napit poistuvat käytön jälkeen
             window.pendingToolUpgraderId = null;
 
             isModalAnimating = true;
@@ -1521,7 +1509,7 @@
             closeShardShop();
             openInventory();
             switchTab('cats');
-            showToast("👉 Valitse kissa inventaariostasi, johon haluat käyttää Tool Upgraderin!", "#00b4d8");
+            showToast("👉 Select a cat in your inventory to use the Tool Upgrader!", "#00b4d8");
         }
 
         function rollSingleCat() {
@@ -1755,7 +1743,7 @@
                 let catWon = (Math.random() * 100) < winChance;
 
                 if (catWon) {
-                    game.achievements['dog_fighter'] = true; // Merkataan saavutus tehdyksi
+                    game.achievements['dog_fighter'] = true;
 
                     let rarity = cat.rarity || "Normal";
                     let tool = swords.find(s => s.name === cat.pickaxe);
@@ -2262,7 +2250,7 @@
                 
                 let hasToolUpgraderInInv = game.shardItems.some(i => i.type === 'toolupgrader');
                 let upgraderPrompt = (window.pendingToolUpgraderId && hasToolUpgraderInInv) 
-                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Klikkaa alta sitä kissaa, jonka työkalua haluat parantaa!</div>` 
+                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Click on the cat below whose tool you want to upgrade!</div>` 
                     : '';
 
                 document.getElementById('invSectionTitle').textContent = `🐱 Your Cats (Mining: ${eqCats}/${maxCats})`;
@@ -2284,7 +2272,7 @@
                         let nameColorStyle = cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 6px #00ffcc;' : 'color: #fff;';
 
                         let showUpgraderBtn = (window.pendingToolUpgraderId && hasToolUpgraderInInv && tool && tool.rank < 6);
-                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Käytä Upgrader</button>` : '';
+                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Use Upgrader</button>` : '';
 
                         catsHtml += `
                             <div class="inv-card${isSelected ? ' selected' : ''}${cat.equipped && !isSword ? ' equipped' : ''}" onmousedown="selectItem(${cat.id})">
@@ -2475,7 +2463,7 @@
 
                     if (cat.favorite) {
                         sellBtn.disabled = true;
-                        sellBtn.textContent = 'Favorited (Cannot Sell';
+                        sellBtn.textContent = 'Favorited (Cannot Sell)';
                     } else {
                         sellBtn.disabled = false;
                         sellBtn.textContent = `Sell Cat (${formatNumber(tool ? tool.sellPrice : 100)} 💵)`;
