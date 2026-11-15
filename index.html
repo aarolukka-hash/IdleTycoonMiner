@@ -483,7 +483,7 @@
 
         <div class="panel">
             <h2>🔄 Rebirth</h2>
-            <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>5x</strong> each time.</p>
+            <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>2.5x</strong> each time.</p>
             <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
         </div>
 
@@ -802,7 +802,8 @@
                 game.money = 0;
                 game.cpsLevel = 1;
                 game.rebirths++;
-                game.rebirthCost *= 5;
+                // Hinnan nousukerrokseksi vaihdettu 5x -> 2.5x (pyöristetään alaspäin tasaluvuiksi)
+                game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
                 saveGame(false);
 
