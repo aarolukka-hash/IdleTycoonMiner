@@ -2,32 +2,42 @@
 <html lang="en">
 <head>
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 1. Korvaa tämä osuus omilla Firebase-asetuksillasi, jotka kopioit äsken!
-    const firebaseConfig = {
-        apiKey: "AIzaSyA3aToY8vSHq9qGpYnZtlCUQ-_jnXwg96s",
-        authDomain: "tycoonidleminerbysushi.firebaseapp.com",
-        projectId: "tycoonidleminerbysushi",
-        storageBucket: "tycoonidleminerbysushi.firebasestorage.app",
-        messagingSenderId: "486285275822",
-        appId: "1:486285275822:web:045010b7f313110ebaf33f"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3aToY8vSHq9qGpYnZtlCUQ-_jnXwg96s",
+            authDomain: "tycoonidleminerbysushi.firebaseapp.com",
+            projectId: "tycoonidleminerbysushi",
+            storageBucket: "tycoonidleminerbysushi.firebasestorage.app",
+            messagingSenderId: "486285275822",
+            appId: "1:486285275822:web:045010b7f313110ebaf33f"
+        };
 
-    // Alustetaan Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    // Tehdään funktioista globaaleja, jotta pelisi muu koodi voi käyttää niitä
-    window.saveGameToFirebase = async function(gameData) {
-        try {
-            await setDoc(doc(db, "players", gameData.playerId), gameData);
-        } catch (e) {
-            console.error("Tallennus epäonnistui:", e);
-        }
-    };
-</script>
+        window.saveGameToFirebase = async function(gameData) {
+            try {
+                await setDoc(doc(db, "players", gameData.playerId), gameData);
+            } catch (e) {
+                console.error("Tallennus epäonnistui:", e);
+            }
+        };
+
+        window.loadGameFromFirebase = async function(playerId) {
+            try {
+                const docRef = doc(db, "players", playerId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data();
+                }
+            } catch (e) {
+                console.error("Lataus epäonnistui:", e);
+            }
+            return null;
+        };
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>😺 TycoonIdleMiner</title>
@@ -178,7 +188,6 @@
             background-color: #0096c7;
         }
 
-        /* Active Mining Cats Panel on Main Screen */
         .active-mining-container {
             margin-top: 20px;
             max-width: 1100px;
@@ -202,7 +211,6 @@
             position: relative;
         }
 
-        /* Toast Popups */
         .toast-container {
             position: fixed;
             bottom: 20px;
@@ -231,7 +239,6 @@
             to { opacity: 0; transform: translateY(10px); }
         }
 
-        /* Animations Modal */
         .anim-overlay {
             display: none;
             position: fixed;
@@ -287,7 +294,6 @@
             100% { transform: scale(1); }
         }
 
-        /* General Modal Styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -489,7 +495,6 @@
             width: 100%;
         }
 
-        /* Scoreboard Table Styles */
         .sb-table {
             width: 100%;
             border-collapse: collapse;
@@ -536,21 +541,18 @@
     </div>
 
     <div class="container">
-        <!-- Upgrades Panel -->
         <div class="panel">
             <h2>⚡ Upgrades</h2>
             <p>Increase your income per second (+1 per upgrade, scaled by Multiplier)!</p>
             <button id="upgradeBtn" onclick="buyUpgrade()">Buy Upgrade (Cost: <span id="upgradeCost">10</span> 💵)</button>
         </div>
 
-        <!-- Rebirth Panel -->
         <div class="panel">
             <h2>🔄 Rebirth</h2>
             <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>5x</strong> each time.</p>
             <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
         </div>
 
-        <!-- Cat Boxes Panel -->
         <div class="panel">
             <h2>📦 Cat Boxes</h2>
             <p>Requires at least 1 Rebirth! Equipped cats mine ores every 5 mins.</p>
@@ -559,7 +561,6 @@
             </div>
         </div>
 
-        <!-- Shards Panel -->
         <div class="panel">
             <h2>💠 Shards Clicker</h2>
             <p>Requires Rebirth 5! Click repeatedly to earn magical shards for the Shard Shop.</p>
@@ -567,7 +568,6 @@
         </div>
     </div>
 
-    <!-- ACTIVE MINING CATS ON MAIN SCREEN -->
     <div class="active-mining-container">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin:0; color: #00ffcc;">⛏️ Active Mining Cats</h2>
@@ -581,15 +581,12 @@
         </div>
     </div>
 
-    <!-- TOAST POPUP CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ANIMATION MODAL (UNBOX & REBIRTH) -->
     <div class="anim-overlay" id="animModal">
         <div class="anim-content" id="animContent"></div>
     </div>
 
-    <!-- GLOBAL SCOREBOARD MODAL -->
     <div class="modal-overlay" id="scoreboardModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -597,14 +594,12 @@
                 <button class="close-btn" onclick="closeScoreboard()">✖ Close</button>
             </div>
             <div class="modal-body">
-                <!-- Left Sidebar Tabs for Scoreboard -->
                 <div class="sidebar">
                     <button class="tab-btn active" id="sbTabMoney" onclick="switchScoreboardTab('money')">💵 Top Money</button>
                     <button class="tab-btn" id="sbTabShards" onclick="switchScoreboardTab('shards')">💠 Top Shards</button>
                     <button class="tab-btn" id="sbTabRebirths" onclick="switchScoreboardTab('rebirths')">🔄 Top Rebirths</button>
                 </div>
 
-                <!-- Right Content Area for Scoreboard -->
                 <div class="main-inv-area">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <h3 id="sbSectionTitle" style="margin: 0; color: #ffb703;">💵 Top 100 Players by Money</h3>
@@ -624,9 +619,7 @@
                                     <th>Money</th>
                                 </tr>
                             </thead>
-                            <tbody id="sbTableBody">
-                                <!-- Populated dynamically -->
-                            </tbody>
+                            <tbody id="sbTableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -634,7 +627,6 @@
         </div>
     </div>
 
-    <!-- SHARD SHOP MODAL -->
     <div class="modal-overlay" id="shardShopModal">
         <div class="modal-content" style="height: auto; max-height: 85vh;">
             <div class="modal-header">
@@ -642,7 +634,6 @@
                 <button class="close-btn" onclick="closeShardShop()">✖ Close</button>
             </div>
             <div class="shop-grid">
-                <!-- 10x Money Potion -->
                 <div class="shop-card">
                     <div>
                         <h3>🧪 10x Money Potion</h3>
@@ -651,7 +642,6 @@
                     <button id="buyPotionBtn" onclick="buyPotion()">Buy (100 💠)</button>
                 </div>
 
-                <!-- Cat Food -->
                 <div class="shop-card">
                     <div>
                         <h3>🐟 Premium Cat Food</h3>
@@ -660,7 +650,6 @@
                     <button id="buyCatFoodBtn" onclick="buyCatFood()">Buy (100 💠)</button>
                 </div>
 
-                <!-- Pickaxe Upgrader -->
                 <div class="shop-card">
                     <div>
                         <h3>⚒️ Pickaxe Upgrader</h3>
@@ -673,7 +662,6 @@
         </div>
     </div>
 
-    <!-- INVENTORY MODAL -->
     <div class="modal-overlay" id="inventoryModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -681,14 +669,12 @@
                 <button class="close-btn" onclick="closeInventory()">✖ Close</button>
             </div>
             <div class="modal-body">
-                <!-- Left Sidebar Tabs -->
                 <div class="sidebar">
                     <button class="tab-btn active" id="tabOres" onclick="switchTab('ores')">💎 Ores</button>
                     <button class="tab-btn" id="tabCats" onclick="switchTab('cats')">🐱 Cats</button>
                     <button class="tab-btn" id="tabShards" onclick="switchTab('shards')">💠 Shards</button>
                 </div>
 
-                <!-- Right Content Area -->
                 <div class="main-inv-area">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <h3 id="invSectionTitle" style="margin: 0; color: #ff007f;">💎 Mined Ores</h3>
@@ -698,7 +684,6 @@
 
                     <div class="item-grid" id="invGrid"></div>
 
-                    <!-- Bottom Action Bar for Selected Item -->
                     <div class="action-bar" id="actionBar">
                         <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
                         <div class="action-buttons" id="actionButtons" style="display: none;">
@@ -714,7 +699,7 @@
 
     <script>
         let game = {
-            playerId: "player_" + Math.random().toString(36.substring(2, 9)),
+            playerId: "player_" + Math.random().toString(36).substring(2, 9),
             playerName: "Pelaaja",
             money: 0,
             cpsLevel: 1,
@@ -813,7 +798,6 @@
             }, 3000);
         }
 
-        // --- SHARED GLOBAL SCOREBOARD LOGIC (localStorage sync) ---
         function getGlobalLeaderboard() {
             let stored = localStorage.getItem('tycoonIdleGlobalLeaderboard');
             let board = stored ? JSON.parse(stored) : [];
@@ -843,10 +827,12 @@
             localStorage.setItem('tycoonIdleGlobalLeaderboard', JSON.stringify(board));
         }
 
-        // SAVE & LOAD FUNCTIONS
         function saveGame(silent = true) {
             localStorage.setItem('tycoonIdleMinerSave', JSON.stringify(game));
             updateGlobalLeaderboard();
+            if (window.saveGameToFirebase) {
+                window.saveGameToFirebase(game);
+            }
             if (!silent) {
                 showToast("💾 Game saved successfully!", "#4361ee");
             }
@@ -883,7 +869,6 @@
 
         loadGame();
 
-        // Automaattinen hiljainen tallennus 5 sekunnin välein
         setInterval(() => {
             saveGame(true);
         }, 5000);
@@ -896,7 +881,6 @@
                 return;
             }
 
-            // Tarkistetaan, onko nimi jo käytössä muilla
             let board = getGlobalLeaderboard();
             let nameTaken = board.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.id !== game.playerId);
             if (nameTaken) {
@@ -942,7 +926,6 @@
 
             let board = getGlobalLeaderboard();
 
-            // Lajittelu valitun tabin mukaan
             if (sbTab === 'money') {
                 board.sort((a, b) => b.money - a.money);
             } else if (sbTab === 'shards') {
@@ -985,7 +968,6 @@
             });
         }
 
-        // Main Game Loop (100ms tick)
         let lastTick = Date.now();
         setInterval(() => {
             let now = Date.now();
@@ -995,7 +977,7 @@
             let currentCps = game.cpsLevel * getMultiplier();
             game.money += currentCps * dt;
 
-            let baseMiningTime = 300; // 5 mins
+            let baseMiningTime = 300;
             let rebirthSpeedBonus = game.rebirths >= 2 ? 1 + (game.rebirths - 1) * 0.1 : 1.0;
             let foodMult = now < game.catFoodEndTime ? 2 : 1;
 
@@ -1114,7 +1096,6 @@
             isOpeningBox = false;
         }
 
-        // SHARDS & SHARD SHOP
         function clickShard() {
             if (game.rebirths < 5) return;
             game.shardClicks++;
@@ -1232,7 +1213,6 @@
             saveGame(false);
         }
 
-        // CAT UNBOXING
         function startOpeningBox() {
             if (isOpeningBox || game.rebirths < 1 || game.money < 1000) return;
             isOpeningBox = true;
@@ -1389,7 +1369,6 @@
             });
         }
 
-        // INVENTORY FUNCTIONS
         function openInventory() {
             document.getElementById('inventoryModal').style.display = 'flex';
             selectedItemId = null;
@@ -1655,4 +1634,4 @@
         }
     </script>
 </body>
-</html>f
+</html>
