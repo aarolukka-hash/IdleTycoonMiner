@@ -802,12 +802,14 @@
                 game.money = 0;
                 game.cpsLevel = 1;
                 game.rebirths++;
-                // Hinnan nousukerrokseksi vaihdettu 5x -> 2.5x (pyöristetään alaspäin tasaluvuiksi)
                 game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
                 saveGame(false);
 
-                let unlocks = [`<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`];
+                let unlocks = [
+                    `<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`,
+                    `Ores sell for <strong>${Math.pow(1.1, game.rebirths).toFixed(2)}x</strong> more!`
+                ];
                 if (game.rebirths === 1) {
                     unlocks.push(`Unlocked <strong>📦 Cat Boxes</strong>!`);
                 }
@@ -1177,7 +1179,7 @@
                 if (idx !== -1 && !game.ores[idx].favorite) {
                     let ore = game.ores[idx];
                     let oreInfo = oresList.find(o => o.name === ore.name);
-                    let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+                    let rebirthValueBonus = Math.pow(1.1, game.rebirths);
                     game.money += Math.floor(oreInfo.baseVal * rebirthValueBonus);
                     game.ores.splice(idx, 1);
                     selectedItemId = null;
@@ -1198,7 +1200,7 @@
 
         function sellAllUnfavoritedOres() {
             let totalEarned = 0;
-            let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+            let rebirthValueBonus = Math.pow(1.1, game.rebirths);
             let remainingOres = [];
 
             game.ores.forEach(ore => {
@@ -1220,7 +1222,7 @@
         function renderInventory() {
             const grid = document.getElementById('invGrid');
             grid.innerHTML = '';
-            let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+            let rebirthValueBonus = Math.pow(1.1, game.rebirths);
 
             if (currentTab === 'ores') {
                 document.getElementById('invSectionTitle').textContent = `💎 Mined Ores (${game.ores.length})`;
