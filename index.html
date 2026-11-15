@@ -374,6 +374,7 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+            position: relative;
         }
         .sidebar {
             width: 140px;
@@ -398,6 +399,7 @@
         .main-inv-area {
             flex: 1;
             padding: 20px;
+            padding-bottom: 90px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -470,26 +472,30 @@
             background: linear-gradient(90deg, #00ffcc, #ff007f);
         }
         .action-bar {
-            background: #252525;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: auto;
+            position: absolute;
+            bottom: 0;
+            left: 140px;
+            right: 0;
+            background: #202020;
+            padding: 12px 20px;
             border-top: 1px solid #444;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
+            z-index: 10;
         }
         .action-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
         .action-buttons button {
             width: auto;
             margin: 0;
-            padding: 8px 14px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
         }
         .equip-btn {
             background-color: #00bfff;
@@ -505,6 +511,10 @@
         }
         .use-btn {
             background-color: #00ffcc;
+            color: #121212;
+        }
+        .sell-all-kind-btn {
+            background-color: #ff7700;
             color: #121212;
         }
         .sell-all-btn {
@@ -541,6 +551,17 @@
             border-radius: 6px;
             margin-top: 8px;
             width: 100%;
+        }
+        .glitch-text {
+            background: linear-gradient(90deg, #ff0055, #00ffcc, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            animation: glitchAnim 2s linear infinite;
+        }
+        @keyframes glitchAnim {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
     </style>
 </head>
@@ -709,22 +730,34 @@
                 </div>
 
                 <div class="main-inv-area">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <h3 id="invSectionTitle" style="margin: 0; color: #ff007f;">💎 Mined Ores</h3>
+                        <div id="catSorterContainer" style="display: none; align-items: center; gap: 6px;">
+                            <span style="font-size: 0.85rem; color: #aaa;">Sort:</span>
+                            <select id="catSortSelect" onchange="renderInventory()" style="margin: 0; width: auto; padding: 5px 10px; font-size: 0.85rem;">
+                                <option value="bestCats">Best Cats</option>
+                                <option value="bestSwordCats">Best Sword Cats</option>
+                                <option value="bestSwordsCats">Best Swords Cats</option>
+                                <option value="az">A - Z</option>
+                                <option value="za">Z - A</option>
+                            </select>
+                        </div>
                         <button class="sell-all-btn" id="sellAllOresBtn" onclick="sellAllUnfavoritedOres()">Sell All (Non-Favorite)</button>
                     </div>
                     <p id="invSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 0 0;">Click an item below to view options.</p>
 
                     <div class="item-grid" id="invGrid"></div>
+                </div>
 
-                    <div class="action-bar" id="actionBar">
-                        <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
-                        <div class="action-buttons" id="actionButtons" style="display: none;">
-                            <button class="use-btn" id="useActionBtn" onclick="useSelectedItem()" style="display: none;">✨ Use</button>
-                            <button class="equip-btn" id="equipActionBtn" onclick="toggleEquipCat()" style="display: none;">⛏️ Equip</button>
-                            <button class="fav-btn" id="favActionBtn" onclick="toggleFavorite()" style="display: none;">★ Favorite</button>
-                            <button class="sell-btn" id="sellActionBtn" onclick="sellSelectedItem()" style="display: none;">Sell</button>
-                        </div>
+                <!-- Kiinteä toimintapalkki aina alhaalla kun inventaario on auki -->
+                <div class="action-bar" id="actionBar">
+                    <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
+                    <div class="action-buttons" id="actionButtons" style="display: none;">
+                        <button class="use-btn" id="useActionBtn" onclick="useSelectedItem()" style="display: none;">✨ Use</button>
+                        <button class="equip-btn" id="equipActionBtn" onclick="toggleEquipCat()" style="display: none;">⛏️ Equip</button>
+                        <button class="sell-all-kind-btn" id="sellAllKindBtn" onclick="sellAllOfKind()" style="display: none;">Sell All Kind</button>
+                        <button class="fav-btn" id="favActionBtn" onclick="toggleFavorite()" style="display: none;">★ Favorite</button>
+                        <button class="sell-btn" id="sellActionBtn" onclick="sellSelectedItem()" style="display: none;">Sell</button>
                     </div>
                 </div>
             </div>
@@ -751,26 +784,26 @@
         };
 
         const pickaxes = [
-            { name: "Wooden Pickaxe", speed: 1, chance: 50, color: "#8B5A2B", sellPrice: 100 },
-            { name: "Stone Pickaxe", speed: 2, chance: 30, color: "#808080", sellPrice: 300 },
-            { name: "Iron Pickaxe", speed: 3, chance: 15, color: "#DCDCDC", sellPrice: 600 },
-            { name: "Diamond Pickaxe", speed: 4, chance: 4.5, color: "#00BFFF", sellPrice: 800 },
-            { name: "Internal Pickaxe", speed: 5, chance: 0.5, color: "#FF007F", sellPrice: 1000 }
+            { name: "Wooden Pickaxe", speed: 1, chance: 50, color: "#8B5A2B", sellPrice: 100, rank: 1 },
+            { name: "Stone Pickaxe", speed: 2, chance: 30, color: "#808080", sellPrice: 300, rank: 2 },
+            { name: "Iron Pickaxe", speed: 3, chance: 15, color: "#DCDCDC", sellPrice: 600, rank: 3 },
+            { name: "Diamond Pickaxe", speed: 4, chance: 4.5, color: "#00BFFF", sellPrice: 800, rank: 4 },
+            { name: "Internal Pickaxe", speed: 5, chance: 0.5, color: "#FF007F", sellPrice: 1000, rank: 5 }
         ];
 
         const swords = [
-            { name: "Wooden Sword", chance: 50, color: "#8B5A2B", sellPrice: 150, winChance: 25 },
-            { name: "Stone Sword", chance: 30, color: "#808080", sellPrice: 400, winChance: 40 },
-            { name: "Iron Sword", chance: 15, color: "#DCDCDC", sellPrice: 750, winChance: 50 },
-            { name: "Diamond Sword", chance: 4.5, color: "#00BFFF", sellPrice: 1200, winChance: 60 },
-            { name: "Internal Sword", chance: 0.5, color: "#FF007F", sellPrice: 2000, winChance: 75 }
+            { name: "Wooden Sword", chance: 50, color: "#8B5A2B", sellPrice: 150, winChance: 25, rank: 1 },
+            { name: "Stone Sword", chance: 30, color: "#808080", sellPrice: 400, winChance: 40, rank: 2 },
+            { name: "Iron Sword", chance: 15, color: "#DCDCDC", sellPrice: 750, winChance: 50, rank: 3 },
+            { name: "Diamond Sword", chance: 4.5, color: "#00BFFF", sellPrice: 1200, winChance: 60, rank: 4 },
+            { name: "Internal Sword", chance: 0.5, color: "#FF007F", sellPrice: 2000, winChance: 75, rank: 5 }
         ];
 
         const catRarities = [
-            { name: "Normal", chance: 80, luckChance: 0, oreMult: 1, color: "#cccccc" },
-            { name: "Golden", chance: 16, luckChance: 70, oreMult: 2, color: "#ffd700" },
-            { name: "Diamond", chance: 3.6, luckChance: 25, oreMult: 3, color: "#00bfff" },
-            { name: "Internal", chance: 0.4, luckChance: 5, oreMult: 5, color: "#ff007f" }
+            { name: "Normal", chance: 80, luckChance: 0, oreMult: 1, color: "#cccccc", rank: 1 },
+            { name: "Golden", chance: 16, luckChance: 70, oreMult: 2, color: "#ffd700", rank: 2 },
+            { name: "Diamond", chance: 3.6, luckChance: 25, oreMult: 3, color: "#00bfff", rank: 3 },
+            { name: "Internal", chance: 0.4, luckChance: 5, oreMult: 5, color: "#ff007f", rank: 4 }
         ];
 
         const oresList = [
@@ -907,11 +940,6 @@
             if (earned > 0) {
                 game.shardClicks = game.shardClicks % 25;
                 game.shards += earned;
-                if (isAuto) {
-                    showToast(`💠 Auto-shard earned! (+${earned} Shard${earned > 1 ? 's' : ''})`, "#00b4d8");
-                } else {
-                    showToast(`💠 You earned <strong>+${earned} Shard${earned > 1 ? 's' : ''}</strong>!`, "#00b4d8");
-                }
             }
         }
 
@@ -926,7 +954,6 @@
             let effectiveCps = game.cpsLevel * getMultiplier();
             game.money += effectiveCps * dt;
 
-            // Auto-clicker loop
             if (game.rebirths >= 5) {
                 let autoStats = getAutoClickStats();
                 autoClickAccumulator += dt;
@@ -937,7 +964,6 @@
                 }
             }
 
-            // Cat mining loop (only pickaxe cats)
             let baseMiningTime = 300;
             let rebirthSpeedBonus = game.rebirths >= 2 ? 1 + (game.rebirths - 1) * 0.1 : 1.0;
             let foodMult = now < game.catFoodEndTime ? 2 : 1;
@@ -969,9 +995,13 @@
                                 break;
                             }
                         }
+
+                        let isExclusive = Math.random() < 0.10;
+
                         game.ores.push({
                             id: Date.now() + Math.random(),
                             name: minedOre.name,
+                            isExclusive: isExclusive,
                             favorite: false
                         });
                         minedCounts[minedOre.name] = (minedCounts[minedOre.name] || 0) + 1;
@@ -1085,21 +1115,11 @@
                     `<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`,
                     `Ores sell for <strong>${Math.pow(1.1, game.rebirths).toFixed(2)}x</strong> more!`
                 ];
-                if (game.rebirths === 1) {
-                    unlocks.push(`Unlocked <strong>📦 Cat Boxes</strong>!`);
-                }
-                if (game.rebirths === 5) {
-                    unlocks.push(`Unlocked <strong>💠 Shards Clicker & Shard Shop</strong>!`);
-                }
-                if (game.rebirths === 10) {
-                    unlocks.push(`Unlocked <strong>⚔️ Sword Cats & Dog Battles</strong>!`);
-                }
-                if (game.rebirths % 5 === 0) {
-                    unlocks.push(`Unlocked <strong>+1 Mining Cat Slot</strong> (Total: ${getMaxMiningCats()})!`);
-                }
-                if (game.rebirths >= 2) {
-                    unlocks.push(`Cats mine <strong>+10% faster</strong>!`);
-                }
+                if (game.rebirths === 1) unlocks.push(`Unlocked <strong>📦 Cat Boxes</strong>!`);
+                if (game.rebirths === 5) unlocks.push(`Unlocked <strong>💠 Shards Clicker & Shard Shop</strong>!`);
+                if (game.rebirths === 10) unlocks.push(`Unlocked <strong>⚔️ Sword Cats & Dog Battles</strong>!`);
+                if (game.rebirths % 5 === 0) unlocks.push(`Unlocked <strong>+1 Mining Cat Slot</strong> (Total: ${getMaxMiningCats()})!`);
+                if (game.rebirths >= 2) unlocks.push(`Cats mine <strong>+10% faster</strong>!`);
 
                 const modal = document.getElementById('animModal');
                 const content = document.getElementById('animContent');
@@ -1254,12 +1274,19 @@
                 }
             }
 
-            let randomCatName = ["Whiskers", "Shadow", "Mittens", "Tiger", "Simba", "Luna", "Felix", "Garfield", "Nala", "Oliver", "Max", "Bella"][Math.floor(Math.random() * 12)];
+            let catNames = ["Whiskers", "Shadow", "Mittens", "Tiger", "Simba", "Luna", "Felix", "Garfield", "Nala", "Oliver", "Max", "Bella"];
+            let chosenName = catNames[Math.floor(Math.random() * catNames.length)];
+            let isWasabi = Math.random() < 0.005;
+            if (isWasabi) {
+                chosenName = "Wasabi";
+            }
+
             let autoEquip = !isSwordCat && (getEquippedCatsCount() < getMaxMiningCats());
 
             let newCat = {
                 id: Date.now() + Math.random(),
-                name: randomCatName,
+                name: chosenName,
+                isWasabi: isWasabi,
                 rarity: selectedRarity.name,
                 toolType: isSwordCat ? 'sword' : 'pickaxe',
                 pickaxe: selectedTool.name,
@@ -1298,11 +1325,13 @@
                         ? '⚔️ Sword Cat ready for Dog Battles!' 
                         : (res.autoEquip ? '⛏️ Automatically equipped to mine!' : '📦 Sent to Inventory (Mining slots full)');
 
+                    let nameColorStyle = res.cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 8px #00ffcc;' : 'color: #fff;';
+
                     content.innerHTML = `
                         <h3 style="color: #ff007f; margin-top:0;">You got a ${res.isSwordCat ? 'Warrior ' : ''}Cat! 🎉</h3>
                         <div class="revealed-cat">${res.isSwordCat ? '🐱⚔️' : '🐱'}</div>
                         <div style="color: ${res.rarity.color}; font-weight: bold; font-size: 1.1rem;">★ ${res.rarity.name} Cat ${!res.isSwordCat ? `(${res.rarity.oreMult}x Ores)` : ''}</div>
-                        <h4 style="margin: 5px 0; color: #fff;">${res.cat.name}</h4>
+                        <h4 style="margin: 5px 0; ${nameColorStyle}">${res.cat.name}</h4>
                         <p style="margin: 5px 0; color: ${res.tool.color}; font-weight: bold;">${res.tool.name}</p>
                         <p style="font-size: 0.85rem; color: #aaa;">${statusMsg}</p>
                         <button onclick="closeAnimModal()" style="margin-top: 15px;">Awesome!</button>
@@ -1314,14 +1343,17 @@
                     }
                     saveGame(false);
 
-                    let listHtml = results.map(res => `
-                        <div class="multi-cat-item" style="border-left-color: ${res.rarity.color};">
-                            <span style="color: ${res.rarity.color}; font-weight: bold;">★ ${res.rarity.name}</span>
-                            <strong>${res.isSwordCat ? '🐱⚔️' : '🐱'} ${res.cat.name}</strong> — 
-                            <span style="color: ${res.tool.color}; font-weight: bold;">${res.tool.name}</span>
-                            ${res.autoEquip ? ' <span style="color:#00ffcc; font-size:0.78rem;">(Equipped!)</span>' : ''}
-                        </div>
-                    `).join('');
+                    let listHtml = results.map(res => {
+                        let nameColorStyle = res.cat.isWasabi ? 'color: #00ffcc; font-weight: bold;' : 'color: #fff;';
+                        return `
+                            <div class="multi-cat-item" style="border-left-color: ${res.rarity.color};">
+                                <span style="color: ${res.rarity.color}; font-weight: bold;">★ ${res.rarity.name}</span>
+                                <strong style="${nameColorStyle}">${res.isSwordCat ? '🐱⚔️' : '🐱'} ${res.cat.name}</strong> — 
+                                <span style="color: ${res.tool.color}; font-weight: bold;">${res.tool.name}</span>
+                                ${res.autoEquip ? ' <span style="color:#00ffcc; font-size:0.78rem;">(Equipped!)</span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
 
                     content.innerHTML = `
                         <h3 style="color: #ff007f; margin-top:0;">🎉 You opened 10 Cat Boxes!</h3>
@@ -1652,6 +1684,7 @@
             document.getElementById('tabCats').classList.toggle('active', tab === 'cats');
             document.getElementById('tabShards').classList.toggle('active', tab === 'shards');
             document.getElementById('sellAllOresBtn').style.display = tab === 'ores' ? 'block' : 'none';
+            document.getElementById('catSorterContainer').style.display = tab === 'cats' ? 'flex' : 'none';
             renderInventory();
         }
 
@@ -1719,7 +1752,9 @@
                     let ore = game.ores[idx];
                     let oreInfo = oresList.find(o => o.name === ore.name);
                     let rebirthValueBonus = Math.pow(1.1, game.rebirths);
-                    game.money += Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    let val = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    if (ore.isExclusive) val *= 10;
+                    game.money += val;
                     game.ores.splice(idx, 1);
                     selectedItemId = null;
                 }
@@ -1739,17 +1774,58 @@
             renderInventory();
         }
 
+        function sellAllOfKind() {
+            if (currentTab !== 'cats' || selectedItemId === null) return;
+            let targetCat = game.cats.find(c => c.id === selectedItemId);
+            if (!targetCat) return;
+
+            let rarity = targetCat.rarity || "Normal";
+            if (rarity === "Internal" || targetCat.pickaxe.includes("Internal")) {
+                showToast("❌ Internal cats/tools cannot be sold with 'Sell All Kind'!", "#ff4444");
+                return;
+            }
+
+            let count = 0;
+            let totalEarned = 0;
+            let remainingCats = [];
+
+            game.cats.forEach(cat => {
+                let isSameKind = (cat.rarity || "Normal") === rarity && 
+                                 cat.toolType === targetCat.toolType && 
+                                 cat.pickaxe === targetCat.pickaxe;
+
+                if (isSameKind && !cat.favorite && !cat.equipped) {
+                    let tool = cat.toolType === 'sword' 
+                        ? swords.find(s => s.name === cat.pickaxe)
+                        : pickaxes.find(p => p.name === cat.pickaxe);
+                    totalEarned += tool ? tool.sellPrice : 100;
+                    count++;
+                } else {
+                    remainingCats.push(cat);
+                }
+            });
+
+            game.cats = remainingCats;
+            game.money += totalEarned;
+            selectedItemId = null;
+            saveGame(true);
+            renderInventory();
+            showToast(`💰 Sold ${count}x ${rarity} ${targetCat.pickaxe} cats for ${formatNumber(totalEarned)} 💵!`, "#ffaa00");
+        }
+
         function sellAllUnfavoritedOres() {
             let totalEarned = 0;
             let rebirthValueBonus = Math.pow(1.1, game.rebirths);
             let remainingOres = [];
 
             game.ores.forEach(ore => {
-                if (ore.favorite) {
+                // Jätetään myymättä jos on favorite TAI jos on exclusive (harvinainen)
+                if (ore.favorite || ore.isExclusive) {
                     remainingOres.push(ore);
                 } else {
                     let oreInfo = oresList.find(o => o.name === ore.name);
-                    totalEarned += Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    let val = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    totalEarned += val;
                 }
             });
 
@@ -1758,6 +1834,53 @@
             selectedItemId = null;
             saveGame(true);
             renderInventory();
+            showToast("💎 Sold non-exclusive & non-favorite ores!", "#00ffcc");
+        }
+
+        function sortCatsList(catsArray) {
+            let sortMode = document.getElementById('catSortSelect') ? document.getElementById('catSortSelect').value : 'bestCats';
+
+            return [...catsArray].sort((a, b) => {
+                if (a.favorite && !b.favorite) return -1;
+                if (!a.favorite && b.favorite) return 1;
+
+                let rA = catRarities.find(r => r.name === (a.rarity || "Normal")).rank;
+                let rB = catRarities.find(r => r.name === (b.rarity || "Normal")).rank;
+                let tA = (a.toolType === 'sword' ? swords : pickaxes).find(t => t.name === a.pickaxe).rank;
+                let tB = (b.toolType === 'sword' ? swords : pickaxes).find(t => t.name === b.pickaxe).rank;
+
+                if (sortMode === 'bestCats') {
+                    let isSwordA = a.toolType === 'sword';
+                    let isSwordB = b.toolType === 'sword';
+                    if (!isSwordA && isSwordB) return -1;
+                    if (isSwordA && !isSwordB) return 1;
+
+                    if (rA !== rB) return rB - rA;
+                    return tB - tA;
+                } 
+                else if (sortMode === 'bestSwordCats') {
+                    let isSwordA = a.toolType === 'sword';
+                    let isSwordB = b.toolType === 'sword';
+                    if (isSwordA && !isSwordB) return -1;
+                    if (!isSwordA && isSwordB) return 1;
+
+                    if (rA !== rB) return rB - rA;
+                    return tB - tA;
+                }
+                else if (sortMode === 'bestSwordsCats') {
+                    let valA = rA * 10 + tA;
+                    let valB = rB * 10 + tB;
+                    if (valA !== valB) return valB - valA;
+                    if (a.toolType !== b.toolType) return a.toolType === 'sword' ? -1 : 1;
+                }
+                else if (sortMode === 'az') {
+                    return a.name.localeCompare(b.name);
+                }
+                else if (sortMode === 'za') {
+                    return b.name.localeCompare(a.name);
+                }
+                return 0;
+            });
         }
 
         function renderInventory() {
@@ -1767,7 +1890,7 @@
 
             if (currentTab === 'ores') {
                 document.getElementById('invSectionTitle').textContent = `💎 Mined Ores (${game.ores.length})`;
-                document.getElementById('invSubtext').textContent = 'Click an ore below to Favorite or Sell it.';
+                document.getElementById('invSubtext').textContent = 'Click an ore below to Favorite or Sell it. Exclusive ores are protected from "Sell All".';
 
                 if (game.ores.length === 0) {
                     grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
@@ -1775,14 +1898,20 @@
                     game.ores.forEach(ore => {
                         let oreInfo = oresList.find(o => o.name === ore.name);
                         let unitVal = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                        if (ore.isExclusive) unitVal *= 10;
                         let isSelected = selectedItemId === ore.id;
 
                         const card = document.createElement('div');
                         card.className = 'inv-card' + (isSelected ? ' selected' : '');
                         card.onmousedown = () => selectItem(ore.id);
+
+                        let nameDisplay = ore.isExclusive 
+                            ? `<strong class="glitch-text" style="font-size: 1.1rem;">✨ ${ore.name} (Exclusive)</strong>`
+                            : `<strong style="color: ${oreInfo.color}; font-size: 1.1rem;">${ore.name}</strong>`;
+
                         card.innerHTML = `
                             ${ore.favorite ? '<span class="fav-badge">★</span>' : ''}
-                            <strong style="color: ${oreInfo.color}; font-size: 1.1rem;">${ore.name}</strong>
+                            ${nameDisplay}
                             <div style="font-size: 0.85rem; color: #aaa; margin-top: 6px;">Value: ${formatNumber(unitVal)} 💵</div>
                         `;
                         grid.appendChild(card);
@@ -1797,7 +1926,8 @@
                 if (game.cats.length === 0) {
                     grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
                 } else {
-                    game.cats.forEach(cat => {
+                    let sortedCats = sortCatsList(game.cats);
+                    sortedCats.forEach(cat => {
                         let isSword = cat.toolType === 'sword';
                         let tool = isSword 
                             ? swords.find(s => s.name === cat.pickaxe)
@@ -1805,13 +1935,15 @@
                         let rarity = catRarities.find(r => r.name === (cat.rarity || "Normal"));
                         let isSelected = selectedItemId === cat.id;
 
+                        let nameColorStyle = cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 6px #00ffcc;' : 'color: #fff;';
+
                         const card = document.createElement('div');
                         card.className = 'inv-card' + (isSelected ? ' selected' : '') + (cat.equipped && !isSword ? ' equipped' : '');
                         card.onmousedown = () => selectItem(cat.id);
                         card.innerHTML = `
                             ${cat.favorite ? '<span class="fav-badge">★</span>' : ''}
                             <div style="font-size: 0.75rem; color: ${rarity.color}; font-weight: bold;">${rarity.name} ${!isSword ? `(${rarity.oreMult}x Ores)` : ''}</div>
-                            <strong>${isSword ? '🐱⚔️' : '🐱'} ${cat.name}</strong>
+                            <strong style="${nameColorStyle}">${isSword ? '🐱⚔️' : '🐱'} ${cat.name}</strong>
                             <div style="font-size: 0.85rem; color: ${tool ? tool.color : '#fff'}; margin-top: 4px;">${cat.pickaxe}</div>
                             ${isSword 
                                 ? `<span class="sword-tag">⚔️ FIGHTER (${tool ? tool.winChance : 25}% Win)</span>`
@@ -1861,7 +1993,9 @@
 
             const infoEl = document.getElementById('selectedInfo');
             const btnsEl = document.getElementById('actionButtons');
+            const useBtn = document.getElementById('useActionBtn');
             const equipBtn = document.getElementById('equipActionBtn');
+            const sellAllKindBtn = document.getElementById('sellAllKindBtn');
             const favBtn = document.getElementById('favActionBtn');
             const sellBtn = document.getElementById('sellActionBtn');
 
@@ -1878,9 +2012,11 @@
                 btnsEl.style.display = 'flex';
                 favBtn.style.display = 'inline-block';
                 sellBtn.style.display = 'inline-block';
+                useBtn.style.display = 'none';
 
                 if (currentTab === 'ores') {
                     equipBtn.style.display = 'none';
+                    sellAllKindBtn.style.display = 'none';
                     let ore = game.ores.find(o => o.id === selectedItemId);
                     if (!ore) {
                         selectedItemId = null;
@@ -1889,8 +2025,9 @@
                     }
                     let oreInfo = oresList.find(o => o.name === ore.name);
                     let val = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    if (ore.isExclusive) val *= 10;
 
-                    infoEl.innerHTML = `Selected: <strong>${ore.name}</strong>`;
+                    infoEl.innerHTML = `Selected: <strong>${ore.isExclusive ? 'Exclusive ' : ''}${ore.name}</strong>`;
                     favBtn.textContent = ore.favorite ? '★ Unfavorite' : '☆ Favorite';
                     
                     if (ore.favorite) {
@@ -1911,7 +2048,9 @@
                     let tool = isSword 
                         ? swords.find(s => s.name === cat.pickaxe)
                         : pickaxes.find(p => p.name === cat.pickaxe);
-                    infoEl.innerHTML = `Selected: <strong>${cat.rarity || 'Normal'} ${cat.name}</strong> (${cat.pickaxe})`;
+                    let rarity = catRarities.find(r => r.name === (cat.rarity || "Normal"));
+
+                    infoEl.innerHTML = `Selected: <strong>${rarity.name} ${cat.name}</strong> (${cat.pickaxe})`;
                     
                     if (isSword) {
                         equipBtn.style.display = 'none';
@@ -1927,6 +2066,19 @@
                             equipBtn.disabled = false;
                             equipBtn.textContent = '⛏️ Equip';
                         }
+                    }
+
+                    if (rarity.name === "Normal" || rarity.name === "Golden") {
+                        sellAllKindBtn.style.display = 'inline-block';
+                        let matchingCount = game.cats.filter(c => 
+                            (c.rarity || "Normal") === rarity.name && 
+                            c.toolType === cat.toolType && 
+                            c.pickaxe === cat.pickaxe && 
+                            !c.favorite && !c.equipped
+                        ).length;
+                        sellAllKindBtn.textContent = `Sell All Kind (${matchingCount})`;
+                    } else {
+                        sellAllKindBtn.style.display = 'none';
                     }
 
                     favBtn.textContent = cat.favorite ? '★ Unfavorite' : '☆ Favorite';
