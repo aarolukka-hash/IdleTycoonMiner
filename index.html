@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😺 TycoonIdleMiner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #00ffcc;
+            margin-bottom: 5px;
+        }
+        .stats {
+            font-size: 1.25rem;
+            margin: 15px 0;
+            background: #1e1e1e;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .active-buffs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .buff-badge {
+            background: #2b1e38;
+            border: 1px solid #b5179e;
+            color: #ff99e6;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .top-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .top-bar button {
+            width: auto;
+            margin: 0;
+            padding: 12px 22px;
+            font-size: 1.05rem;
+            border-radius: 8px;
+        }
+        .inv-open-btn {
+            background-color: #9d4edd;
+            color: white;
+        }
+        .inv-open-btn:hover {
+            background-color: #7b2cbf;
+        }
+        .shop-open-btn {
+            background-color: #f72585;
+            color: white;
+        }
+        .shop-open-btn:hover:not(:disabled) {
+            background-color: #b5179e;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .panel {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h2 {
+            color: #ff007f;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        button {
+            background-color: #00ffcc;
+            color: #121212;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #00cca3;
+        }
+        button:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+        button:disabled {
+            background-color: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .rebirth-btn {
+            background-color: #ff3366;
+            color: white;
+        }
+        .rebirth-btn:hover:not(:disabled) {
+            background-color: #d92552;
+        }
+
+        /* Isot ja pienemmät erikoisnapit */
+        .shard-click-btn {
+            background-color: #00b4d8;
+            color: #121212;
+            font-size: 1.15rem;
+            padding: 16px 20px;
+            margin-top: 15px;
+            box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
+        }
+        .shard-click-btn:hover:not(:disabled) {
+            background-color: #0096c7;
+        }
+        .small-box-btn {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            background-color: #00ffcc;
+            color: #121212;
+        }
+
+        /* Active Mining Cats Panel on Main Screen */
+        .active-mining-container {
+            margin-top: 20px;
+            max-width: 900px;
+            width: 100%;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .mining-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .mining-card {
+            background: #252525;
+            border: 2px solid #00ffcc;
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+        }
+
+        /* Toast Popups */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 3000;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(30, 30, 30, 0.95);
+            border-left: 4px solid #00ffcc;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            font-size: 0.95rem;
+            animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.6s forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* Animations Modal */
+        .anim-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .anim-content {
+            background: #222;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            border: 2px solid #00ffcc;
+            max-width: 380px;
+            width: 90%;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .box-shake {
+            animation: shake 0.5s ease-in-out infinite;
+            font-size: 5rem;
+            margin: 20px 0;
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        .rebirth-spin {
+            animation: spinGlow 1s ease-out;
+            font-size: 4.5rem;
+            margin: 15px 0;
+        }
+        @keyframes spinGlow {
+            0% { transform: rotate(0deg) scale(0.3); opacity: 0; }
+            70% { transform: rotate(360deg) scale(1.2); opacity: 1; }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .revealed-cat {
+            animation: bounceIn 0.5s ease;
+            font-size: 4rem;
+            margin: 15px 0;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* General Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e1e1e;
+            width: 92%;
+            max-width: 780px;
+            height: 82vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+        }
+        .modal-header {
+            background: #252525;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+        .modal-header h2 {
+            margin: 0;
+            border: none;
+            padding: 0;
+            color: #00ffcc;
+        }
+        .close-btn {
+            background: #ff3366;
+            color: white;
+            width: auto;
+            margin: 0;
+            padding: 6px 14px;
+        }
+        .modal-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 140px;
+            background: #181818;
+            padding: 15px 10px;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .tab-btn {
+            background: #2a2a2a;
+            color: #ccc;
+            margin: 0;
+            text-align: left;
+            padding: 12px;
+        }
+        .tab-btn.active {
+            background: #00ffcc;
+            color: #121212;
+        }
+        .main-inv-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .inv-card {
+            background: #252525;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: border-color 0.15s, background-color 0.15s;
+            position: relative;
+            user-select: none;
+        }
+        .inv-card:hover {
+            border-color: #777;
+            background: #2d2d2d;
+        }
+        .inv-card.selected {
+            border-color: #00ffcc;
+            background: #263833;
+        }
+        .inv-card.equipped {
+            box-shadow: inset 0 0 8px rgba(0, 255, 204, 0.25);
+        }
+        .fav-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #ffcc00;
+            font-size: 1.1rem;
+        }
+        .equip-tag {
+            display: inline-block;
+            background: #00ffcc;
+            color: #121212;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ffcc, #ff007f);
+        }
+        .action-bar {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: auto;
+            border-top: 1px solid #444;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .action-buttons button {
+            width: auto;
+            margin: 0;
+            padding: 8px 14px;
+        }
+        .equip-btn {
+            background-color: #00bfff;
+            color: #121212;
+        }
+        .fav-btn {
+            background-color: #ffcc00;
+            color: #121212;
+        }
+        .sell-btn {
+            background-color: #ff4444;
+            color: white;
+        }
+        .sell-all-btn {
+            background-color: #ffaa00;
+            color: #121212;
+            width: auto;
+            margin: 0;
+        }
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .shop-card {
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .shop-card h3 {
+            margin: 0 0 8px 0;
+            color: #00ffcc;
+        }
+        select {
+            background: #181818;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>😺 TycoonIdleMiner</h1>
+    <p>Earn money, upgrade your income, rebirth, collect shards, and manage your cats & ores!</p>
+
+    <div class="stats">
+        <div>Money: <span id="moneyDisplay">0</span> 💵</div>
+        <div>Income: <span id="cpsDisplay">1</span> / sec</div>
+        <div>Multiplier: <span id="multiplierDisplay">1</span>x</div>
+        <div>Rebirths: <span id="rebirthCount">0</span></div>
+        <div>Shards: <span id="shardDisplay">0</span> 💠</div>
+    </div>
+
+    <div class="active-buffs" id="activeBuffs"></div>
+
+    <div class="top-bar">
+        <button class="inv-open-btn" onclick="openInventory()">🎒 Inventory</button>
+        <button class="shop-open-btn" id="shardShopBtn" onclick="openShardShop()" disabled>🛒 Shard Shop (Rebirth 5)</button>
+    </div>
+
+    <div class="container">
+        <!-- Upgrades Panel -->
+        <div class="panel">
+            <div>
+                <h2>⚡ Upgrades</h2>
+                <p>Increase your income per second (+1 per upgrade, scaled by Multiplier)!</p>
+                <button id="upgradeBtn" onclick="buyUpgrade()">Buy Upgrade (Cost: <span id="upgradeCost">10</span> 💵)</button>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <h2>🔄 Rebirth</h2>
+                <p>Resets money & ores (keeps cats & shards!). Increases Multiplier by +0.5x. Cost increases <strong>5x</strong> each time. Every 5 Rebirths unlocks +1 Mining Cat Slot!</p>
+                <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
+            </div>
+        </div>
+
+        <!-- Box & Shard Panel -->
+        <div class="panel">
+            <div>
+                <h2>📦 Cat Boxes & Shards</h2>
+                <p style="font-size: 0.9rem; margin-bottom: 8px;">Open boxes for cats or click for shards!</p>
+                <button class="small-box-btn" id="boxBtn" onclick="startOpeningBox()" disabled>Locked (Rebirth 1)</button>
+                <p style="margin-top: 6px; color: #aaa; font-size: 0.8rem;">
+                    Slots: <strong id="equippedCountDisplay" style="color: #00ffcc;">0 / 1</strong> (Next at <span id="nextSlotRebirth">5</span>)
+                </p>
+            </div>
+
+            <div>
+                <button class="shard-click-btn" id="shardClickBtn" onclick="clickShard()" disabled>💠 Locked (Rebirth 5)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVE MINING CATS ON MAIN SCREEN -->
+    <div class="active-mining-container">
+        <h2 style="margin-top:0; color: #00ffcc;">⛏️ Active Mining Cats</h2>
+        <p style="font-size: 0.85rem; color: #aaa; margin: 0 0 10px 0;">Equipped cats currently working for you:</p>
+        <div class="mining-grid" id="mainMiningGrid">
+            <p style="color: #666; font-size: 0.9rem; margin: 0;">No cats currently equipped. Go to Inventory to equip cats!</p>
+        </div>
+    </div>
+
+    <!-- TOAST POPUP CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ANIMATION MODAL (UNBOX & REBIRTH) -->
+    <div class="anim-overlay" id="animModal">
+        <div class="anim-content" id="animContent"></div>
+    </div>
+
+    <!-- SHARD SHOP MODAL -->
+    <div class="modal-overlay" id="shardShopModal">
+        <div class="modal-content" style="height: auto; max-height: 85vh;">
+            <div class="modal-header">
+                <h2>🛒 Shard Shop (Your Shards: <span id="shopShardCount">0</span> 💠)</h2>
+                <button class="close-btn" onclick="closeShardShop()">✖ Close</button>
+            </div>
+            <div class="shop-grid">
+                <!-- 10x Money Potion -->
+                <div class="shop-card">
+                    <div>
+                        <h3>🧪 10x Money Potion</h3>
+                        <p style="font-size: 0.9rem; color: #bbb;">Multiplies your money income by <strong>10x</strong> for 5 minutes!</p>
+                    </div>
+                    <button id="buyPotionBtn" onclick="buyPotion()">Buy (100 💠)</button>
+                </div>
+
+                <!-- Cat Food -->
+                <div class="shop-card">
+                    <div>
+                        <h3>🐟 Premium Cat Food</h3>
+                        <p style="font-size: 0.9rem; color: #bbb;">Doubles the amount of ores your cats mine (<strong>2x Ores</strong>) for 10 minutes!</p>
+                    </div>
+                    <button id="buyCatFoodBtn" onclick="buyCatFood()">Buy (100 💠)</button>
+                </div>
+
+                <!-- Pickaxe Upgrader -->
+                <div class="shop-card">
+                    <div>
+                        <h3>⚒️ Pickaxe Upgrader</h3>
+                        <p style="font-size: 0.9rem; color: #bbb;"><strong>25% chance</strong> to upgrade a selected cat's pickaxe by +1 tier!</p>
+                        <select id="upgradeCatSelect"></select>
+                    </div>
+                    <button id="buyPickaxeUpgradeBtn" onclick="buyPickaxeUpgrade()">Upgrade (1000 💠)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVENTORY MODAL -->
+    <div class="modal-overlay" id="inventoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎒 Inventory</h2>
+                <button class="close-btn" onclick="closeInventory()">✖ Close</button>
+            </div>
+            <div class="modal-body">
+                <!-- Left Sidebar Tabs -->
+                <div class="sidebar">
+                    <button class="tab-btn active" id="tabOres" onclick="switchTab('ores')">💎 Ores</button>
+                    <button class="tab-btn" id="tabCats" onclick="switchTab('cats')">🐱 Cats</button>
+                    <button class="tab-btn" id="tabShards" onclick="switchTab('shards')">💠 Shards</button>
+                </div>
+
+                <!-- Right Content Area -->
+                <div class="main-inv-area">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 id="invSectionTitle" style="margin: 0; color: #ff007f;">💎 Mined Ores</h3>
+                        <button class="sell-all-btn" id="sellAllOresBtn" onclick="sellAllUnfavoritedOres()">Sell All (Non-Favorite)</button>
+                    </div>
+                    <p id="invSubtext" style="font-size: 0.85rem; color: #aaa; margin: 5px 0 0 0;">Click an item below to Favorite or Sell it.</p>
+
+                    <div class="item-grid" id="invGrid"></div>
+
+                    <!-- Bottom Action Bar for Selected Item -->
+                    <div class="action-bar" id="actionBar">
+                        <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
+                        <div class="action-buttons" id="actionButtons" style="display: none;">
+                            <button class="equip-btn" id="equipActionBtn" onclick="toggleEquipCat()" style="display: none;">⛏️ Equip</button>
+                            <button class="fav-btn" id="favActionBtn" onclick="toggleFavorite()" style="display: none;">★ Favorite</button>
+                            <button class="sell-btn" id="sellActionBtn" onclick="sellSelectedItem()" style="display: none;">Sell</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let game = {
+            money: 0,
+            cpsLevel: 1,
+            rebirths: 0,
+            rebirthCost: 1000,
+            shards: 0,
+            shardClicks: 0,
+            potionEndTime: 0,
+            catFoodEndTime: 0,
+            cats: [],
+            ores: []
+        };
+
+        const pickaxes = [
+            { name: "Wooden Pickaxe", speed: 1, chance: 50, color: "#8B5A2B", sellPrice: 100 },
+            { name: "Stone Pickaxe", speed: 2, chance: 30, color: "#808080", sellPrice: 300 },
+            { name: "Iron Pickaxe", speed: 3, chance: 15, color: "#DCDCDC", sellPrice: 600 },
+            { name: "Diamond Pickaxe", speed: 4, chance: 4.5, color: "#00BFFF", sellPrice: 800 },
+            { name: "Internal Pickaxe", speed: 5, chance: 0.5, color: "#FF007F", sellPrice: 1000 }
+        ];
+
+        const catRarities = [
+            { name: "Normal", chance: 80, oreMult: 1, color: "#cccccc" },
+            { name: "Golden", chance: 16, oreMult: 2, color: "#ffd700" },
+            { name: "Diamond", chance: 3.6, oreMult: 3, color: "#00bfff" },
+            { name: "Internal", chance: 0.4, oreMult: 5, color: "#ff007f" }
+        ];
+
+        const oresList = [
+            { name: "Iron", baseVal: 50, weight: 50, color: "#b0b0b0" },
+            { name: "Gold", baseVal: 200, weight: 25, color: "#ffd700" },
+            { name: "Diamond", baseVal: 500, weight: 15, color: "#00bfff" },
+            { name: "Titanium", baseVal: 1500, weight: 7, color: "#9999ff" },
+            { name: "Obanium", baseVal: 4000, weight: 2.5, color: "#ff6600" },
+            { name: "Internal", baseVal: 10000, weight: 0.5, color: "#ff007f" }
+        ];
+
+        const catNames = ["Whiskers", "Shadow", "Mittens", "Tiger", "Simba", "Luna", "Felix", "Garfield", "Nala", "Oliver"];
+
+        let currentTab = 'ores';
+        let selectedItemId = null;
+        let isOpeningBox = false;
+
+        function formatNumber(num) {
+            if (num === undefined || isNaN(num)) return "0";
+            if (num < 1000) return Math.floor(num);
+            let suffixes = ['', 'k', 'm', 'b', 't', 'qd', 'qt'];
+            let i = Math.floor(Math.log10(num) / 3);
+            let val = (num / Math.pow(10, i * 3)).toFixed(1);
+            if (val.endsWith('.0')) val = val.slice(0, -2);
+            return val + suffixes[i];
+        }
+
+        function getMultiplier() {
+            let baseMult = 1 + (game.rebirths * 0.5);
+            if (Date.now() < game.potionEndTime) {
+                return baseMult * 10;
+            }
+            return baseMult;
+        }
+
+        function getUpgradeCost() {
+            return Math.floor(10 * Math.pow(1.5, game.cpsLevel - 1));
+        }
+
+        function getMaxMiningCats() {
+            return 1 + Math.floor(game.rebirths / 5);
+        }
+
+        function getEquippedCatsCount() {
+            return game.cats.filter(c => c.equipped).length;
+        }
+
+        function showToast(message, color = "#00ffcc") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = color;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Main Game Loop (100ms tick)
+        let lastTick = Date.now();
+        setInterval(() => {
+            let now = Date.now();
+            let dt = (now - lastTick) / 1000;
+            lastTick = now;
+
+            let currentCps = game.cpsLevel * getMultiplier();
+            game.money += currentCps * dt;
+
+            let baseMiningTime = 300; // 5 mins
+            let rebirthSpeedBonus = game.rebirths >= 2 ? 1 + (game.rebirths - 1) * 0.1 : 1.0;
+            let foodMult = now < game.catFoodEndTime ? 2 : 1;
+
+            let oreMinedThisTick = false;
+
+            game.cats.forEach(cat => {
+                if (!cat.equipped) return;
+
+                let pickaxe = pickaxes.find(p => p.name === cat.pickaxe);
+                let rarity = catRarities.find(r => r.name === (cat.rarity || "Normal"));
+                let actualTime = baseMiningTime / (pickaxe.speed * rebirthSpeedBonus);
+                cat.progress += (dt / actualTime) * 100;
+
+                if (cat.progress >= 100) {
+                    cat.progress = 0;
+                    let totalOres = rarity.oreMult * foodMult;
+                    let minedCounts = {};
+
+                    for (let i = 0; i < totalOres; i++) {
+                        let rand = Math.random() * 100;
+                        let acc = 0;
+                        let minedOre = oresList[0];
+                        for (let ore of oresList) {
+                            acc += ore.weight;
+                            if (rand <= acc) {
+                                minedOre = ore;
+                                break;
+                            }
+                        }
+                        game.ores.push({
+                            id: Date.now() + Math.random(),
+                            name: minedOre.name,
+                            favorite: false
+                        });
+                        minedCounts[minedOre.name] = (minedCounts[minedOre.name] || 0) + 1;
+                    }
+
+                    let summary = Object.entries(minedCounts).map(([name, count]) => {
+                        let oreInfo = oresList.find(o => o.name === name);
+                        return `<strong style="color:${oreInfo.color}">${count > 1 ? count + 'x ' : ''}${name}</strong>`;
+                    }).join(", ");
+
+                    showToast(`⛏️ <strong>${cat.name}</strong> mined ${summary}!`);
+                    oreMinedThisTick = true;
+                }
+            });
+
+            updateMainUI();
+            updateMainScreenMiningGrid();
+
+            if (document.getElementById('inventoryModal').style.display === 'flex') {
+                if (currentTab === 'cats' || currentTab === 'shards') {
+                    game.cats.forEach(cat => {
+                        let bar = document.getElementById(`prog-${cat.id}`);
+                        if (bar) {
+                            bar.style.width = `${Math.min(cat.progress, 100)}%`;
+                        }
+                    });
+                } else if (currentTab === 'ores' && oreMinedThisTick) {
+                    renderInventory();
+                }
+            }
+        }, 100);
+
+        function buyUpgrade() {
+            let cost = getUpgradeCost();
+            if (game.money >= cost) {
+                game.money -= cost;
+                game.cpsLevel++;
+            }
+        }
+
+        function doRebirth() {
+            if (game.money >= game.rebirthCost) {
+                game.money = 0;
+                game.cpsLevel = 1;
+                game.rebirths++;
+                game.rebirthCost *= 5;
+                game.ores = [];
+
+                let unlocks = [`<strong>+0.5x</strong> Multiplier (Total: ${(1 + game.rebirths * 0.5).toFixed(1)}x)`];
+                if (game.rebirths === 1) {
+                    unlocks.push(`Unlocked <strong>😺 Cat Boxes</strong>!`);
+                }
+                if (game.rebirths === 5) {
+                    unlocks.push(`Unlocked <strong>💠 Shards & Shard Shop</strong>!`);
+                }
+                if (game.rebirths % 5 === 0) {
+                    unlocks.push(`Unlocked <strong>+1 Mining Cat Slot</strong> (Total: ${getMaxMiningCats()})!`);
+                }
+                if (game.rebirths >= 2) {
+                    unlocks.push(`Cats mine <strong>+10% faster</strong>!`);
+                }
+
+                const modal = document.getElementById('animModal');
+                const content = document.getElementById('animContent');
+                modal.style.display = 'flex';
+                content.innerHTML = `
+                    <h2 style="color: #ff007f; margin-top: 0;">🔄 Rebirthed! (Rebirth ${game.rebirths})</h2>
+                    <div class="rebirth-spin">✨</div>
+                    <p style="color: #00ffcc; font-weight: bold; margin-bottom: 8px;">You gained:</p>
+                    <div style="text-align: left; background: #181818; padding: 12px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6;">
+                        ${unlocks.map(u => `• ${u}`).join('<br>')}
+                    </div>
+                    <button onclick="closeAnimModal()" style="margin-top: 18px;">Continue</button>
+                `;
+            }
+        }
+
+        function closeAnimModal() {
+            document.getElementById('animModal').style.display = 'none';
+            isOpeningBox = false;
+        }
+
+        // SHARDS & SHARD SHOP
+        function clickShard() {
+            if (game.rebirths < 5) return;
+            game.shardClicks++;
+            if (game.shardClicks >= 100) {
+                game.shardClicks = 0;
+                game.shards++;
+                showToast(`💠 You earned <strong>1 Shard</strong>!`, "#00b4d8");
+            }
+            updateMainUI();
+        }
+
+        function openShardShop() {
+            if (game.rebirths < 5) return;
+            document.getElementById('shardShopModal').style.display = 'flex';
+            updateShardShopUI();
+        }
+
+        function closeShardShop() {
+            document.getElementById('shardShopModal').style.display = 'none';
+        }
+
+        function updateShardShopUI() {
+            document.getElementById('shopShardCount').textContent = formatNumber(game.shards);
+            document.getElementById('buyPotionBtn').disabled = game.shards < 100;
+            document.getElementById('buyCatFoodBtn').disabled = game.shards < 100;
+
+            const select = document.getElementById('upgradeCatSelect');
+            const prevVal = select.value;
+            select.innerHTML = '';
+
+            let upgradableCats = game.cats.filter(c => c.pickaxe !== "Internal Pickaxe");
+            if (upgradableCats.length === 0) {
+                let opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No upgradable cats";
+                select.appendChild(opt);
+                document.getElementById('buyPickaxeUpgradeBtn').disabled = true;
+            } else {
+                upgradableCats.forEach(c => {
+                    let opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `${c.rarity || 'Normal'} ${c.name} (${c.pickaxe})`;
+                    select.appendChild(opt);
+                });
+                if (prevVal && upgradableCats.some(c => String(c.id) === prevVal)) {
+                    select.value = prevVal;
+                }
+                document.getElementById('buyPickaxeUpgradeBtn').disabled = game.shards < 1000;
+            }
+        }
+
+        function buyPotion() {
+            if (game.shards < 100) return;
+            game.shards -= 100;
+            let now = Date.now();
+            game.potionEndTime = Math.max(now, game.potionEndTime) + (5 * 60 * 1000);
+            showToast(`🧪 <strong>10x Money Potion</strong> activated for 5 mins!`, "#f72585");
+            updateShardShopUI();
+        }
+
+        function buyCatFood() {
+            if (game.shards < 100) return;
+            game.shards -= 100;
+            let now = Date.now();
+            game.catFoodEndTime = Math.max(now, game.catFoodEndTime) + (10 * 60 * 1000);
+            showToast(`🐟 <strong>Premium Cat Food</strong> activated for 10 mins (2x Ores)!`, "#ffaa00");
+            updateShardShopUI();
+        }
+
+        function buyPickaxeUpgrade() {
+            if (game.shards < 1000) return;
+            const select = document.getElementById('upgradeCatSelect');
+            let catId = Number(select.value);
+            let cat = game.cats.find(c => c.id === catId);
+            if (!cat) return;
+
+            let currentIdx = pickaxes.findIndex(p => p.name === cat.pickaxe);
+            if (currentIdx === -1 || currentIdx >= pickaxes.length - 1) return;
+
+            game.shards -= 1000;
+
+            if (Math.random() < 0.25) {
+                let nextPickaxe = pickaxes[currentIdx + 1];
+                cat.pickaxe = nextPickaxe.name;
+                cat.color = nextPickaxe.color;
+                showToast(`🎉 Success! <strong>${cat.name}</strong>'s tool upgraded to <strong style="color:${nextPickaxe.color}">${nextPickaxe.name}</strong>!`, "#00ffcc");
+            } else {
+                showToast(`💥 Upgrade failed! (25% chance)`, "#ff4444");
+            }
+            updateShardShopUI();
+        }
+
+        // CAT UNBOXING
+        function startOpeningBox() {
+            if (isOpeningBox || game.rebirths < 1 || game.money < 1000) return;
+            isOpeningBox = true;
+            game.money -= 1000;
+
+            const modal = document.getElementById('animModal');
+            const content = document.getElementById('animContent');
+            modal.style.display = 'flex';
+
+            content.innerHTML = `
+                <h3 style="color: #00ffcc; margin-top:0;">Opening Box...</h3>
+                <div class="box-shake">📦</div>
+                <p style="color: #aaa;">What will you get?</p>
+            `;
+
+            setTimeout(() => {
+                let pRoll = Math.random() * 100;
+                let pAcc = 0;
+                let selectedPickaxe = pickaxes[0];
+                for (let p of pickaxes) {
+                    pAcc += p.chance;
+                    if (pRoll <= pAcc) {
+                        selectedPickaxe = p;
+                        break;
+                    }
+                }
+
+                let rRoll = Math.random() * 100;
+                let rAcc = 0;
+                let selectedRarity = catRarities[0];
+                for (let r of catRarities) {
+                    rAcc += r.chance;
+                    if (rRoll <= rAcc) {
+                        selectedRarity = r;
+                        break;
+                    }
+                }
+
+                let randomCatName = catNames[Math.floor(Math.random() * catNames.length)];
+                let autoEquip = getEquippedCatsCount() < getMaxMiningCats();
+                
+                let newCat = {
+                    id: Date.now() + Math.random(),
+                    name: randomCatName,
+                    rarity: selectedRarity.name,
+                    pickaxe: selectedPickaxe.name,
+                    color: selectedPickaxe.color,
+                    progress: 0,
+                    favorite: false,
+                    equipped: autoEquip
+                };
+                game.cats.push(newCat);
+
+                content.innerHTML = `
+                    <h3 style="color: #ff007f; margin-top:0;">You got a Cat! 🎉</h3>
+                    <div class="revealed-cat">🐱</div>
+                    <div style="color: ${selectedRarity.color}; font-weight: bold; font-size: 1.1rem;">★ ${selectedRarity.name} Cat (${selectedRarity.oreMult}x Ores)</div>
+                    <h4 style="margin: 5px 0; color: #fff;">${newCat.name}</h4>
+                    <p style="margin: 5px 0; color: ${selectedPickaxe.color}; font-weight: bold;">${selectedPickaxe.name}</p>
+                    <p style="font-size: 0.85rem; color: #aaa;">${autoEquip ? '⛏️ Automatically equipped to mine!' : '📦 Sent to Inventory (Mining slots full)'}</p>
+                    <button onclick="closeAnimModal()" style="margin-top: 15px;">Awesome!</button>
+                `;
+            }, 1200);
+        }
+
+        function updateMainUI() {
+            let mult = getMultiplier();
+            let currentCps = game.cpsLevel * mult;
+            let upgradeCost = getUpgradeCost();
+            let maxCats = getMaxMiningCats();
+            let eqCats = getEquippedCatsCount();
+            let nextSlotReb = (Math.floor(game.rebirths / 5) + 1) * 5;
+
+            document.getElementById('moneyDisplay').textContent = formatNumber(game.money);
+            document.getElementById('cpsDisplay').textContent = formatNumber(currentCps);
+            document.getElementById('multiplierDisplay').textContent = mult.toFixed(1);
+            document.getElementById('rebirthCount').textContent = game.rebirths;
+            document.getElementById('shardDisplay').textContent = formatNumber(game.shards);
+            document.getElementById('upgradeCost').textContent = formatNumber(upgradeCost);
+            document.getElementById('rebirthCost').textContent = formatNumber(game.rebirthCost);
+            document.getElementById('equippedCountDisplay').textContent = `${eqCats} / ${maxCats}`;
+            document.getElementById('nextSlotRebirth').textContent = nextSlotReb;
+
+            document.getElementById('upgradeBtn').disabled = game.money < upgradeCost;
+            document.getElementById('rebirthBtn').disabled = game.money < game.rebirthCost;
+
+            const shardBtn = document.getElementById('shardClickBtn');
+            const shopBtn = document.getElementById('shardShopBtn');
+            if (game.rebirths < 5) {
+                shardBtn.disabled = true;
+                shardBtn.textContent = "💠 Locked (Rebirth 5)";
+                shopBtn.disabled = true;
+                shopBtn.textContent = "🛒 Shard Shop (Rebirth 5)";
+            } else {
+                shardBtn.disabled = false;
+                shardBtn.textContent = `💠 Click for Shard (${game.shardClicks}/100)`;
+                shopBtn.disabled = false;
+                shopBtn.textContent = "🛒 Shard Shop";
+            }
+
+            const buffsDiv = document.getElementById('activeBuffs');
+            let now = Date.now();
+            let buffHTML = '';
+            if (now < game.potionEndTime) {
+                let secLeft = Math.ceil((game.potionEndTime - now) / 1000);
+                let mins = Math.floor(secLeft / 60);
+                let secs = secLeft % 60;
+                buffHTML += `<div class="buff-badge">🧪 10x Money: ${mins}m ${secs}s</div>`;
+            }
+            if (now < game.catFoodEndTime) {
+                let secLeft = Math.ceil((game.catFoodEndTime - now) / 1000);
+                let mins = Math.floor(secLeft / 60);
+                let secs = secLeft % 60;
+                buffHTML += `<div class="buff-badge">🐟 2x Ores: ${mins}m ${secs}s</div>`;
+            }
+            buffsDiv.innerHTML = buffHTML;
+
+            let boxBtn = document.getElementById('boxBtn');
+            if (game.rebirths < 1) {
+                boxBtn.disabled = true;
+                boxBtn.textContent = "Locked (Rebirth 1)";
+            } else {
+                boxBtn.disabled = game.money < 1000 || isOpeningBox;
+                boxBtn.textContent = "Open Cat Box (1k 💵)";
+            }
+        }
+
+        function updateMainScreenMiningGrid() {
+            const grid = document.getElementById('mainMiningGrid');
+            let equippedCats = game.cats.filter(c => c.equipped);
+
+            if (equippedCats.length === 0) {
+                grid.innerHTML = '<p style="color: #666; font-size: 0.9rem; margin: 0;">No cats currently equipped. Go to Inventory to equip cats!</p>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            equippedCats.forEach(cat => {
+                let pickaxe = pickaxes.find(p => p.name === cat.pickaxe);
+                let rarity = catRarities.find(r => r.name === (cat.rarity || "Normal"));
+
+                const card = document.createElement('div');
+                card.className = 'mining-card';
+                card.innerHTML = `
+                    <div style="font-size: 0.75rem; color: ${rarity.color}; font-weight: bold;">${rarity.name} (${rarity.oreMult}x Ores)</div>
+                    <strong style="font-size: 1.05rem;">🐱 ${cat.name}</strong>
+                    <div style="font-size: 0.85rem; color: ${pickaxe.color}; margin-top: 3px;">${cat.pickaxe}</div>
+                    <div class="progress-bar-container" style="margin-top: 10px;">
+                        <div class="progress-bar" style="width: ${Math.min(cat.progress, 100)}%;"></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // INVENTORY FUNCTIONS
+        function openInventory() {
+            document.getElementById('inventoryModal').style.display = 'flex';
+            selectedItemId = null;
+            renderInventory();
+        }
+
+        function closeInventory() {
+            document.getElementById('inventoryModal').style.display = 'none';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            selectedItemId = null;
+            document.getElementById('tabOres').classList.toggle('active', tab === 'ores');
+            document.getElementById('tabCats').classList.toggle('active', tab === 'cats');
+            document.getElementById('tabShards').classList.toggle('active', tab === 'shards');
+            document.getElementById('sellAllOresBtn').style.display = tab === 'ores' ? 'block' : 'none';
+            renderInventory();
+        }
+
+        function selectItem(id) {
+            selectedItemId = id;
+            renderInventory();
+        }
+
+        function toggleEquipCat() {
+            if (currentTab !== 'cats' || selectedItemId === null) return;
+            let cat = game.cats.find(c => c.id === selectedItemId);
+            if (!cat) return;
+
+            if (cat.equipped) {
+                cat.equipped = false;
+            } else {
+                if (getEquippedCatsCount() < getMaxMiningCats()) {
+                    cat.equipped = true;
+                }
+            }
+            renderInventory();
+        }
+
+        function toggleFavorite() {
+            if (selectedItemId === null) return;
+
+            if (currentTab === 'ores') {
+                let ore = game.ores.find(o => o.id === selectedItemId);
+                if (ore) ore.favorite = !ore.favorite;
+            } else if (currentTab === 'cats') {
+                let cat = game.cats.find(c => c.id === selectedItemId);
+                if (cat) cat.favorite = !cat.favorite;
+            }
+            renderInventory();
+        }
+
+        function sellSelectedItem() {
+            if (selectedItemId === null) return;
+
+            if (currentTab === 'ores') {
+                let idx = game.ores.findIndex(o => o.id === selectedItemId);
+                if (idx !== -1 && !game.ores[idx].favorite) {
+                    let ore = game.ores[idx];
+                    let oreInfo = oresList.find(o => o.name === ore.name);
+                    let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+                    game.money += Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                    game.ores.splice(idx, 1);
+                    selectedItemId = null;
+                }
+            } else if (currentTab === 'cats') {
+                let idx = game.cats.findIndex(c => c.id === selectedItemId);
+                if (idx !== -1 && !game.cats[idx].favorite) {
+                    let cat = game.cats[idx];
+                    let pickaxe = pickaxes.find(p => p.name === cat.pickaxe);
+                    game.money += pickaxe.sellPrice;
+                    game.cats.splice(idx, 1);
+                    selectedItemId = null;
+                }
+            }
+            renderInventory();
+        }
+
+        function sellAllUnfavoritedOres() {
+            let totalEarned = 0;
+            let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+            let remainingOres = [];
+
+            game.ores.forEach(ore => {
+                if (ore.favorite) {
+                    remainingOres.push(ore);
+                } else {
+                    let oreInfo = oresList.find(o => o.name === ore.name);
+                    totalEarned += Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                }
+            });
+
+            game.ores = remainingOres;
+            game.money += totalEarned;
+            selectedItemId = null;
+            renderInventory();
+        }
+
+        function renderInventory() {
+            const grid = document.getElementById('invGrid');
+            grid.innerHTML = '';
+            let rebirthValueBonus = 1 + (game.rebirths * 0.05);
+
+            if (currentTab === 'ores') {
+                document.getElementById('invSectionTitle').textContent = `💎 Mined Ores (${game.ores.length})`;
+                document.getElementById('invSubtext').textContent = 'Click an ore below to Favorite or Sell it.';
+
+                if (game.ores.length === 0) {
+                    grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
+                } else {
+                    game.ores.forEach(ore => {
+                        let oreInfo = oresList.find(o => o.name === ore.name);
+                        let unitVal = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+                        let isSelected = selectedItemId === ore.id;
+
+                        const card = document.createElement('div');
+                        card.className = 'inv-card' + (isSelected ? ' selected' : '');
+                        card.onmousedown = () => selectItem(ore.id);
+                        card.innerHTML = `
+                            ${ore.favorite ? '<span class="fav-badge">★</span>' : ''}
+                            <strong style="color: ${oreInfo.color}; font-size: 1.1rem;">${ore.name}</strong>
+                            <div style="font-size: 0.85rem; color: #aaa; margin-top: 6px;">Value: ${formatNumber(unitVal)} 💵</div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } else if (currentTab === 'cats') {
+                let maxCats = getMaxMiningCats();
+                let eqCats = getEquippedCatsCount();
+                document.getElementById('invSectionTitle').textContent = `🐱 Your Cats (Mining: ${eqCats}/${maxCats})`;
+                document.getElementById('invSubtext').textContent = 'Click a cat to Equip/Unequip for mining, Favorite, or Sell.';
+
+                if (game.cats.length === 0) {
+                    grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
+                } else {
+                    game.cats.forEach(cat => {
+                        let pickaxe = pickaxes.find(p => p.name === cat.pickaxe);
+                        let rarity = catRarities.find(r => r.name === (cat.rarity || "Normal"));
+                        let isSelected = selectedItemId === cat.id;
+
+                        const card = document.createElement('div');
+                        card.className = 'inv-card' + (isSelected ? ' selected' : '') + (cat.equipped ? ' equipped' : '');
+                        card.onmousedown = () => selectItem(cat.id);
+                        card.innerHTML = `
+                            ${cat.favorite ? '<span class="fav-badge">★</span>' : ''}
+                            <div style="font-size: 0.75rem; color: ${rarity.color}; font-weight: bold;">${rarity.name} (${rarity.oreMult}x Ores)</div>
+                            <strong>🐱 ${cat.name}</strong>
+                            <div style="font-size: 0.85rem; color: ${pickaxe.color}; margin-top: 4px;">${cat.pickaxe}</div>
+                            ${cat.equipped ? '<span class="equip-tag">⛏️ MINING</span>' : '<span style="font-size:0.75rem; color:#777; display:block; margin-top:5px;">Resting</span>'}
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="prog-${cat.id}" style="width: ${Math.min(cat.progress, 100)}%;"></div>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } else if (currentTab === 'shards') {
+                document.getElementById('invSectionTitle').textContent = `💠 Shards Balance`;
+                document.getElementById('invSubtext').textContent = 'Your collected magical shards used in the Shard Shop.';
+
+                grid.innerHTML = `
+                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 30px; cursor: default;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">💠</div>
+                        <h3 style="margin: 0 0 10px 0; color: #00b4d8;">Total Shards</h3>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #fff;">${formatNumber(game.shards)}</div>
+                        <p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Earn more shards using the Shard Clicker button on the main screen!</p>
+                    </div>
+                `;
+            }
+
+            const infoEl = document.getElementById('selectedInfo');
+            const btnsEl = document.getElementById('actionButtons');
+            const equipBtn = document.getElementById('equipActionBtn');
+            const favBtn = document.getElementById('favActionBtn');
+            const sellBtn = document.getElementById('sellActionBtn');
+
+            if (currentTab === 'shards') {
+                btnsEl.style.display = 'none';
+                infoEl.textContent = 'Shards are currency for the Shard Shop.';
+                return;
+            }
+
+            if (selectedItemId === null) {
+                infoEl.textContent = 'Click an item above to view options.';
+                btnsEl.style.display = 'none';
+            } else {
+                btnsEl.style.display = 'flex';
+                favBtn.style.display = 'inline-block';
+                sellBtn.style.display = 'inline-block';
+
+                if (currentTab === 'ores') {
+                    equipBtn.style.display = 'none';
+                    let ore = game.ores.find(o => o.id === selectedItemId);
+                    if (!ore) {
+                        selectedItemId = null;
+                        renderInventory();
+                        return;
+                    }
+                    let oreInfo = oresList.find(o => o.name === ore.name);
+                    let val = Math.floor(oreInfo.baseVal * rebirthValueBonus);
+
+                    infoEl.innerHTML = `Selected: <strong>${ore.name}</strong>`;
+                    favBtn.textContent = ore.favorite ? '★ Unfavorite' : '☆ Favorite';
+                    
+                    if (ore.favorite) {
+                        sellBtn.disabled = true;
+                        sellBtn.textContent = 'Favorited (Cannot Sell)';
+                    } else {
+                        sellBtn.disabled = false;
+                        sellBtn.textContent = `Sell (${formatNumber(val)} 💵)`;
+                    }
+                } else {
+                    let cat = game.cats.find(c => c.id === selectedItemId);
+                    if (!cat) {
+                        selectedItemId = null;
+                        renderInventory();
+                        return;
+                    }
+                    let pickaxe = pickaxes.find(p => p.name === cat.pickaxe);
+                    infoEl.innerHTML = `Selected: <strong>${cat.rarity || 'Normal'} ${cat.name}</strong> (${cat.pickaxe})`;
+                    
+                    equipBtn.style.display = 'inline-block';
+                    if (cat.equipped) {
+                        equipBtn.disabled = false;
+                        equipBtn.textContent = '🛑 Unequip';
+                    } else if (getEquippedCatsCount() >= getMaxMiningCats()) {
+                        equipBtn.disabled = true;
+                        equipBtn.textContent = 'Slots Full';
+                    } else {
+                        equipBtn.disabled = false;
+                        equipBtn.textContent = '⛏️ Equip';
+                    }
+
+                    favBtn.textContent = cat.favorite ? '★ Unfavorite' : '☆ Favorite';
+
+                    if (cat.favorite) {
+                        sellBtn.disabled = true;
+                        sellBtn.textContent = 'Favorited (Cannot Sell)';
+                    } else {
+                        sellBtn.disabled = false;
+                        sellBtn.textContent = `Sell Cat (${formatNumber(pickaxe.sellPrice)} 💵)`;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
