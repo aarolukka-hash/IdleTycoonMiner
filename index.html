@@ -83,6 +83,13 @@
         .battle-open-btn:hover:not(:disabled) {
             background-color: #e08b00;
         }
+        .ach-open-btn {
+            background-color: #3a86ff;
+            color: white;
+        }
+        .ach-open-btn:hover {
+            background-color: #2667cc;
+        }
         .container {
             display: flex;
             gap: 20px;
@@ -573,6 +580,31 @@
             0% { filter: hue-rotate(0deg); }
             100% { filter: hue-rotate(360deg); }
         }
+        
+        /* Saavutukset (Achievements) ruudukko */
+        .ach-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .ach-card {
+            background: #252525;
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 0.6;
+        }
+        .ach-card.unlocked {
+            border-color: #00ffcc;
+            background: #1c2b27;
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -592,6 +624,7 @@
 
     <div class="top-bar">
         <button class="inv-open-btn" onclick="openInventory()">🎒 Inventory</button>
+        <button class="ach-open-btn" onclick="openAchievementsModal()">🏆 Achievements</button>
         <button class="shop-open-btn" id="shardShopBtn" onclick="openShardShop()" disabled>🛒 Shard Shop (Rebirth 5)</button>
         <button class="battle-open-btn" id="dogBattleBtn" onclick="openDogBattleModal()" disabled>⚔️ Dog Battle (Rebirth 10)</button>
         <button style="background-color: #4361ee; color: white; width: auto;" onclick="manualSaveGame()">💾 Save Game</button>
@@ -607,7 +640,7 @@
 
         <div class="panel">
             <h2>🔄 Rebirth</h2>
-            <p>Resets money, ores & shards (keeps cats & shard clicker upgrades!). Increases Multiplier by +1x. Cost increases <strong>2.5x</strong> each time.</p>
+            <p>Resets money, ores & shards (keeps cats & resets click upgrade! Active potions/food also clear). Increases Multiplier by +1x.</p>
             <button class="rebirth-btn" id="rebirthBtn" onclick="doRebirth()">Rebirth (Cost: <span id="rebirthCost">1k</span> 💵)</button>
         </div>
 
@@ -647,19 +680,15 @@
         <div class="anim-content" id="animContent"></div>
     </div>
 
-    <div class="modal-overlay" id="toolUpgraderModal">
-        <div class="modal-content" style="height: auto; max-width: 440px;">
+    <!-- Saavutukset Modal -->
+    <div class="modal-overlay" id="achievementsModal">
+        <div class="modal-content" style="height: auto; max-height: 80vh;">
             <div class="modal-header">
-                <h2>⚒️ Use Tool Upgrader</h2>
-                <button class="close-btn" onclick="closeToolUpgraderModal()">✖ Close</button>
+                <h2>🏆 Achievements (<span id="unlockedAchCount">0</span> / <span id="totalAchCount">0</span>)</h2>
+                <button class="close-btn" onclick="closeAchievementsModal()">✖ Close</button>
             </div>
-            <div style="padding: 20px;">
-                <p style="color: #ccc; font-size: 0.92rem; margin-top: 0;">
-                    Choose a cat to upgrade <strong>only its tool</strong> by +1 tier (25% success rate, Max: Celestial).
-                </p>
-                <label style="font-size: 0.85rem; color: #aaa;">Choose Cat:</label>
-                <select id="toolUpgradeCatSelect"></select>
-                <button onclick="executeToolUpgrader()" style="margin-top: 15px; background-color: #00ffcc; color: #121212;">⚒️ Start Tool Upgrade (25%)</button>
+            <div class="ach-grid" id="achievementsGrid">
+                <!-- Generoidaan dynaamisesti -->
             </div>
         </div>
     </div>
@@ -791,7 +820,6 @@
                     <div class="item-grid" id="invGrid"></div>
                 </div>
 
-                <!-- Kiinteä toimintapalkki aina alhaalla kun inventaario on auki -->
                 <div class="action-bar" id="actionBar">
                     <div id="selectedInfo" style="color: #aaa; font-size: 0.95rem;">Select an item to view options</div>
                     <div class="action-buttons" id="actionButtons" style="display: none;">
@@ -823,8 +851,20 @@
             catMergerUnlocked: false,
             cats: [],
             ores: [],
-            shardItems: []
+            shardItems: [],
+            achievements: {} // Tänne tallennetaan suoritetut saavutukset
         };
+
+        // Saavutusten määrittely
+        const achievementsList = [
+            { id: "first_dollar", title: "Ensimmäinen raha", desc: "Ansaitse ensimmäiset rahasi.", check: () => game.money >= 1 },
+            { id: "rich_1k", title: "Pikkurikastuja", desc: "Omista vähintään 1 000 💵.", check: () => game.money >= 1000 },
+            { id: "first_rebirth", title: "Uusi alku", desc: "Suorita ensimmäinen Rebirth.", check: () => game.rebirths >= 1 },
+            { id: "rebirth_5", title: "Uskollinen kaivaja", desc: "Suorita 5 Rebirthiä.", check: () => game.rebirths >= 5 },
+            { id: "collector_5cats", title: "Kissalauma", desc: "Omista vähintään 5 kissaa kerralla.", check: () => game.cats.length >= 5 },
+            { id: "shard_collector", title: "Sirpaleiden herra", desc: "Hanki ensimmäinen sirpaleesi (Shard).", check: () => game.shards >= 1 },
+            { id: "dog_fighter", title: "Koirien pelko", desc: "Voita taistelu koiraa vastaan.", check: () => false /* Päivitetään taistelun voitolla */ }
+        ];
 
         const pickaxes = [
             { name: "Wooden Pickaxe", speed: 1, chance: 50, color: "#8B5A2B", sellPrice: 100, rank: 1 },
@@ -853,20 +893,18 @@
         ];
 
         const oresList = [
-            { name: "Iron", baseVal: 50, weight: 40, color: "#b0b0b0", rank: 1 },
-            { name: "Gold", baseVal: 200, weight: 20, color: "#ffd700", rank: 2 },
-            { name: "Diamond", baseVal: 500, weight: 12, color: "#00bfff", rank: 3 },
-            // Uusi malmi heti Diamondin yläpuolella:
-            { name: "Onyx", baseVal: 750, weight: 9, color: "#333333", rank: 4 },
-            { name: "Titanium", baseVal: 1500, weight: 7, color: "#9999ff", rank: 5 },
-            { name: "Obanium", baseVal: 4000, weight: 4, color: "#ff6600", rank: 6 },
-            { name: "Internal", baseVal: 10000, weight: 3, color: "#ff007f", rank: 7 },
-            { name: "Celestial", baseVal: 25000, weight: 2, color: "#00ffcc", rank: 8 },
-            // 4 uutta halvempaa malmia (Copper, Silver, Bronze, Platinum) ennen Diamondia/Onyxia tai muualle halutessasi (tässä sijoitettu ennen Ironia tai heti alussa):
-            { name: "Copper", baseVal: 80, weight: 15, color: "#b87333", rank: 0 },
-            { name: "Silver", baseVal: 150, weight: 10, color: "#e6e6e6", rank: 0 },
-            { name: "Bronze", baseVal: 250, weight: 8, color: "#cd7f32", rank: 0 },
-            { name: "Platinum", baseVal: 400, weight: 6, color: "#e5e4e2", rank: 0 }
+            { name: "Copper", baseVal: 80, weight: 15, color: "#b87333", rank: 1 },
+            { name: "Silver", baseVal: 150, weight: 10, color: "#e6e6e6", rank: 2 },
+            { name: "Bronze", baseVal: 250, weight: 8, color: "#cd7f32", rank: 3 },
+            { name: "Platinum", baseVal: 400, weight: 6, color: "#e5e4e2", rank: 4 },
+            { name: "Diamond", baseVal: 500, weight: 12, color: "#00bfff", rank: 5 },
+            { name: "Onyx", baseVal: 750, weight: 9, color: "#333333", rank: 6 },
+            { name: "Iron", baseVal: 1200, weight: 15, color: "#b0b0b0", rank: 7 },
+            { name: "Gold", baseVal: 2500, weight: 10, color: "#ffd700", rank: 8 },
+            { name: "Titanium", baseVal: 5000, weight: 5, color: "#9999ff", rank: 9 },
+            { name: "Obanium", baseVal: 12000, weight: 3, color: "#ff6600", rank: 10 },
+            { name: "Internal", baseVal: 30000, weight: 2, color: "#ff007f", rank: 11 },
+            { name: "Celestial", baseVal: 25000, weight: 1, color: "#00ffcc", rank: 12 }
         ].sort((a, b) => a.baseVal - b.baseVal).map((o, idx) => ({ ...o, rank: idx + 1 }));
 
         let currentTab = 'ores';
@@ -953,6 +991,16 @@
             }, 3000);
         }
 
+        // Tarkistetaan saavutukset säännöllisesti
+        function checkAchievements() {
+            achievementsList.forEach(ach => {
+                if (!game.achievements[ach.id] && ach.check()) {
+                    game.achievements[ach.id] = true;
+                    showToast(`🏆 Saavutus avattu: <strong>${ach.title}</strong>!`, "#3a86ff");
+                }
+            });
+        }
+
         function saveGame(silent = true) {
             localStorage.setItem('tycoonIdleMinerSave', JSON.stringify(game));
             if (!silent) {
@@ -970,6 +1018,7 @@
                 try {
                     let parsed = JSON.parse(saved);
                     game = { ...game, ...parsed };
+                    if (!game.achievements) game.achievements = {};
                 } catch (e) {
                     console.error("Failed to load save data", e);
                 }
@@ -1072,6 +1121,7 @@
                 }
             });
 
+            checkAchievements();
             updateMainUI();
             updateMainScreenMiningGrid();
 
@@ -1159,6 +1209,9 @@
                 game.cpsLevel = 1;
                 game.shards = 0;
                 game.shardClicks = 0;
+                game.clickUpgradeLevel = 1;
+                game.potionEndTime = 0;
+                game.catFoodEndTime = 0;
                 game.rebirths++;
                 game.rebirthCost = Math.floor(game.rebirthCost * 2.5);
                 game.ores = [];
@@ -1166,7 +1219,8 @@
 
                 let unlocks = [
                     `<strong>+1.0x</strong> Multiplier (Total: ${(1 + game.rebirths).toFixed(1)}x)`,
-                    `Ores sell for <strong>${Math.pow(1.1, game.rebirths).toFixed(2)}x</strong> more!`
+                    `Ores sell for <strong>${Math.pow(1.1, game.rebirths).toFixed(2)}x</strong> more!`,
+                    `Click Upgrade reset to Level 1 and active potions/food cleared.`
                 ];
                 if (game.rebirths === 1) unlocks.push(`Unlocked <strong>📦 Cat Boxes</strong>!`);
                 if (game.rebirths === 5) unlocks.push(`Unlocked <strong>💠 Shards Clicker & Shard Shop</strong>!`);
@@ -1210,6 +1264,40 @@
 
         function closeShardShop() {
             document.getElementById('shardShopModal').style.display = 'none';
+        }
+
+        // Saavutukset Modal toiminnot
+        function openAchievementsModal() {
+            const modal = document.getElementById('achievementsModal');
+            const grid = document.getElementById('achievementsGrid');
+            grid.innerHTML = '';
+
+            let unlockedCount = 0;
+            achievementsList.forEach(ach => {
+                let isUnlocked = game.achievements[ach.id];
+                if (isUnlocked) unlockedCount++;
+
+                const card = document.createElement('div');
+                card.className = 'ach-card' + (isUnlocked ? ' unlocked' : '');
+                card.innerHTML = `
+                    <div>
+                        <h3 style="margin: 0 0 5px 0; color: ${isUnlocked ? '#00ffcc' : '#aaa'};">🏆 ${ach.title}</h3>
+                        <p style="font-size: 0.85rem; color: #ccc; margin: 0;">${ach.desc}</p>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: ${isUnlocked ? '#00ffcc' : '#777'};">
+                        ${isUnlocked ? '✅ Completed' : '🔒 Locked'}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('unlockedAchCount').textContent = unlockedCount;
+            document.getElementById('totalAchCount').textContent = achievementsList.length;
+            modal.style.display = 'flex';
+        }
+
+        function closeAchievementsModal() {
+            document.getElementById('achievementsModal').style.display = 'none';
         }
 
         function updateShardShopUI() {
@@ -1367,47 +1455,9 @@
             }, 1500);
         }
 
-        function openToolUpgraderModal(itemId) {
-            activeToolUpgraderItemId = itemId;
-            const modal = document.getElementById('toolUpgraderModal');
-            const select = document.getElementById('toolUpgradeCatSelect');
-            select.innerHTML = '';
-
-            let upgradableCats = game.cats.filter(c => {
-                let toolList = c.toolType === 'sword' ? swords : pickaxes;
-                let currentToolObj = toolList.find(t => t.name === c.pickaxe);
-                return currentToolObj && currentToolObj.rank < 6;
-            });
-
-            if (upgradableCats.length === 0) {
-                let opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "No cats with upgradable tools (Max: Celestial)";
-                select.appendChild(opt);
-            } else {
-                upgradableCats.forEach(c => {
-                    let opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = `${c.rarity || 'Normal'} ${c.name} (${c.pickaxe})`;
-                    select.appendChild(opt);
-                });
-            }
-
-            modal.style.display = 'flex';
-        }
-
-        function closeToolUpgraderModal() {
-            document.getElementById('toolUpgraderModal').style.display = 'none';
-        }
-
-        function executeToolUpgrader() {
-            const select = document.getElementById('toolUpgradeCatSelect');
-            let catId = Number(select.value);
+        function useToolUpgraderOnCat(catId, itemInventoryId) {
             let cat = game.cats.find(c => c.id === catId);
-            if (!cat) {
-                showToast("❌ Please select a valid cat!", "#ff4444");
-                return;
-            }
+            if (!cat) return;
 
             let toolList = cat.toolType === 'sword' ? swords : pickaxes;
             let currentToolObj = toolList.find(t => t.name === cat.pickaxe);
@@ -1416,14 +1466,12 @@
                 return;
             }
 
-            let itemIdx = game.shardItems.findIndex(i => i.id === activeToolUpgraderItemId);
+            let itemIdx = game.shardItems.findIndex(i => i.id === itemInventoryId);
             if (itemIdx !== -1) {
                 game.shardItems.splice(itemIdx, 1);
             }
 
-            closeToolUpgraderModal();
             isModalAnimating = true;
-
             const animModal = document.getElementById('animModal');
             const content = document.getElementById('animContent');
             animModal.style.display = 'flex';
@@ -1431,7 +1479,7 @@
                 <h3 style="color: #00ffcc; margin-top:0;">⚒️ Upgrading Tool...</h3>
                 <div class="merging-anim-icon">⚒️✨</div>
                 <p style="color: #00ffcc; font-weight: bold;">Chance: 25%</p>
-                <p style="color: #aaa; font-size: 0.85rem;">Enhancing ${cat.pickaxe}...</p>
+                <p style="color: #aaa; font-size: 0.85rem;">Enhancing ${cat.pickaxe} for ${cat.name}...</p>
             `;
 
             setTimeout(() => {
@@ -1454,15 +1502,23 @@
                     content.innerHTML = `
                         <h3 style="color: #ff4444; margin-top:0;">💥 Tool Upgrade Failed!</h3>
                         <div style="font-size: 3.5rem; margin: 15px 0;">💨🔨</div>
-                        <p style="color: #fff;">The tool upgrade failed (25% chance).</p>
+                        <p style="color: #fff;">The tool upgrade failed (25% chance). Item was consumed.</p>
                         <button onclick="closeAnimModal()" style="margin-top: 15px; background-color: #ff4444; color: white;">Ouch...</button>
                     `;
-                    showToast(`💥 Tool upgrade failed! (25% chance)`, "#ff4444");
+                    showToast(`💥 Tool upgrade failed! (75% chance)`, "#ff4444");
                 }
 
                 saveGame(false);
                 renderInventory();
             }, 1500);
+        }
+
+        function promptToolUpgradeSelection(itemId) {
+            switchTab('cats');
+            closeShardShop();
+            showToast("👉 Select a cat in your inventory to use the Tool Upgrader!", "#00b4d8");
+            window.pendingToolUpgraderId = itemId;
+            renderInventory();
         }
 
         function rollSingleCat() {
@@ -1696,22 +1752,16 @@
                 let catWon = (Math.random() * 100) < winChance;
 
                 if (catWon) {
+                    game.achievements['dog_fighter'] = true; // Merkataan saavutus tehdyksi
+
                     let rarity = cat.rarity || "Normal";
                     let tool = swords.find(s => s.name === cat.pickaxe);
                     let rewardCount = (tool && tool.doubleReward) ? 2 : 1;
                     let rewards = [];
 
                     for (let k = 0; k < rewardCount; k++) {
-                        if (rarity === "Celestial" || rarity === "Internal") {
-                            let randItem = Math.random();
-                            rewards.push(randItem < 0.4 ? 'potion' : (randItem < 0.8 ? 'catfood' : 'toolupgrader'));
-                        } else if (rarity === "Diamond") {
-                            let randItem = Math.random();
-                            rewards.push(randItem < 0.4 ? 'potion' : (randItem < 0.8 ? 'catfood' : 'toolupgrader'));
-                        } else {
-                            let randItem = Math.random();
-                            rewards.push(randItem < 0.45 ? 'potion' : (randItem < 0.9 ? 'catfood' : 'toolupgrader'));
-                        }
+                        let randItem = Math.random();
+                        rewards.push(randItem < 0.45 ? 'potion' : (randItem < 0.9 ? 'catfood' : 'toolupgrader'));
                     }
 
                     let rewardNames = [];
@@ -1986,7 +2036,7 @@
                 saveGame(false);
                 renderInventory();
             } else if (item.type === 'toolupgrader') {
-                openToolUpgraderModal(id);
+                promptToolUpgradeSelection(id);
             }
         }
 
@@ -2206,13 +2256,20 @@
             } else if (currentTab === 'cats') {
                 let maxCats = getMaxMiningCats();
                 let eqCats = getEquippedCatsCount();
+                
+                let hasToolUpgraderInInv = game.shardItems.some(i => i.type === 'toolupgrader');
+                let upgraderPrompt = (window.pendingToolUpgraderId && hasToolUpgraderInInv) 
+                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Click "Tool Upgrader" on any eligible cat below to use your item!</div>` 
+                    : '';
+
                 document.getElementById('invSectionTitle').textContent = `🐱 Your Cats (Mining: ${eqCats}/${maxCats})`;
                 document.getElementById('invSubtext').textContent = 'Click a cat to Equip/Unequip for mining, Favorite, or Sell.';
 
                 if (game.cats.length === 0) {
-                    grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
+                    grid.innerHTML = upgraderPrompt + '<p style="color: #777; grid-column: 1 / -1;">Hmm nothing here..</p>';
                 } else {
                     let sortedCats = sortCatsList(game.cats);
+                    let catsHtml = upgraderPrompt;
                     sortedCats.forEach(cat => {
                         let isSword = cat.toolType === 'sword';
                         let tool = isSword 
@@ -2223,28 +2280,31 @@
 
                         let nameColorStyle = cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 6px #00ffcc;' : 'color: #fff;';
 
-                        const card = document.createElement('div');
-                        card.className = 'inv-card' + (isSelected ? ' selected' : '') + (cat.equipped && !isSword ? ' equipped' : '');
-                        card.onmousedown = () => selectItem(cat.id);
-                        card.innerHTML = `
-                            ${cat.favorite ? '<span class="fav-badge">★</span>' : ''}
-                            <div style="font-size: 0.75rem; color: ${rarity.color}; font-weight: bold;">${rarity.name} ${!isSword ? `(${rarity.oreMult}x Ores)` : ''}</div>
-                            <strong style="${nameColorStyle}">${isSword ? '🐱⚔️' : '🐱'} ${cat.name}</strong>
-                            <div style="font-size: 0.85rem; color: ${tool ? tool.color : '#fff'}; margin-top: 4px;">${cat.pickaxe}</div>
-                            ${isSword 
-                                ? `<span class="sword-tag">⚔️ FIGHTER (${tool ? tool.winChance : 25}% Win)</span>`
-                                : (cat.equipped 
-                                    ? '<span class="equip-tag">⛏️ MINING</span>' 
-                                    : '<span style="font-size:0.75rem; color:#777; display:block; margin-top:5px;">Resting</span>')
-                            }
-                            ${!isSword ? `
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" id="prog-${cat.id}" style="width: ${Math.min(cat.progress, 100)}%;"></div>
-                                </div>
-                            ` : ''}
+                        let showUpgraderBtn = (window.pendingToolUpgraderId && hasToolUpgraderInInv && tool && tool.rank < 6);
+                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Tool Upgrader</button>` : '';
+
+                        catsHtml += `
+                            <div class="inv-card${isSelected ? ' selected' : ''}${cat.equipped && !isSword ? ' equipped' : ''}" onmousedown="selectItem(${cat.id})">
+                                ${cat.favorite ? '<span class="fav-badge">★</span>' : ''}
+                                <div style="font-size: 0.75rem; color: ${rarity.color}; font-weight: bold;">${rarity.name} ${!isSword ? `(${rarity.oreMult}x Ores)` : ''}</div>
+                                <strong style="${nameColorStyle}">${isSword ? '🐱⚔️' : '🐱'} ${cat.name}</strong>
+                                <div style="font-size: 0.85rem; color: ${tool ? tool.color : '#fff'}; margin-top: 4px;">${cat.pickaxe}</div>
+                                ${isSword 
+                                    ? `<span class="sword-tag">⚔️ FIGHTER (${tool ? tool.winChance : 25}% Win)</span>`
+                                    : (cat.equipped 
+                                        ? '<span class="equip-tag">⛏️ MINING</span>' 
+                                        : '<span style="font-size:0.75rem; color:#777; display:block; margin-top:5px;">Resting</span>')
+                                }
+                                ${!isSword ? `
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="prog-${cat.id}" style="width: ${Math.min(cat.progress, 100)}%;"></div>
+                                    </div>
+                                ` : ''}
+                                ${upgraderBtnHtml}
+                            </div>
                         `;
-                        grid.appendChild(card);
                     });
+                    grid.innerHTML = catsHtml;
                 }
             } else if (currentTab === 'merger') {
                 document.getElementById('invSectionTitle').textContent = `🧬 Cat Merger Machine`;
@@ -2412,7 +2472,7 @@
 
                     if (cat.favorite) {
                         sellBtn.disabled = true;
-                        sellBtn.textContent = 'Favorited (Cannot Sell)';
+                        sellBtn.textContent = 'Favorited (Cannot Sell';
                     } else {
                         sellBtn.disabled = false;
                         sellBtn.textContent = `Sell Cat (${formatNumber(tool ? tool.sellPrice : 100)} 💵)`;
