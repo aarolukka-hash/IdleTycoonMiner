@@ -535,7 +535,7 @@
                 <div class="shop-card">
                     <div>
                         <h3>🧪 10x Money Potion</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Inventory. Multiplies income by <strong>10x</strong> for 5 mins when used!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Shards inventory. Multiplies income by <strong>10x</strong> for 5 mins when used!</p>
                     </div>
                     <button id="buyPotionBtn" onclick="buyItemToInventory('potion', 100)">Buy (100 💠)</button>
                 </div>
@@ -543,7 +543,7 @@
                 <div class="shop-card">
                     <div>
                         <h3>🐟 Premium Cat Food</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Inventory. Doubles cat mined ores (<strong>2x Ores</strong>) for 10 mins when used!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Shards inventory. Doubles cat mined ores (<strong>2x Ores</strong>) for 10 mins when used!</p>
                     </div>
                     <button id="buyCatFoodBtn" onclick="buyItemToInventory('catfood', 100)">Buy (100 💠)</button>
                 </div>
@@ -551,7 +551,7 @@
                 <div class="shop-card">
                     <div>
                         <h3>🚀 Shard Income Booster</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;">Permanently boosts your CPS level based on upgrade count and shard upgrades!</p>
+                        <p style="font-size: 0.9rem; color: #bbb;">Increases your income level. Cost & power equal to normal Upgrade divided by 10!</p>
                     </div>
                     <button id="buyShardUpgradeBtn" onclick="buyShardIncomeUpgrade()">Upgrade (Cost: <span id="shardUpgradeCostDisplay">1</span> 💠)</button>
                 </div>
@@ -578,7 +578,6 @@
                 <div class="sidebar">
                     <button class="tab-btn active" id="tabOres" onclick="switchTab('ores')">💎 Ores</button>
                     <button class="tab-btn" id="tabCats" onclick="switchTab('cats')">🐱 Cats</button>
-                    <button class="tab-btn" id="tabShardItems" onclick="switchTab('sharditems')">🧪 Shard Items</button>
                     <button class="tab-btn" id="tabShards" onclick="switchTab('shards')">💠 Shards</button>
                 </div>
 
@@ -673,8 +672,7 @@
         }
 
         function getShardIncomeUpgradeCost() {
-            let baseCost = Math.max(1, Math.floor(game.cpsLevel / 10));
-            return Math.floor(baseCost * Math.pow(1.2, game.shardIncomeLevel));
+            return Math.max(1, Math.floor(getUpgradeCost() / 10));
         }
 
         function getMaxMiningCats() {
@@ -751,7 +749,7 @@
             let dt = (now - lastTick) / 1000;
             lastTick = now;
 
-            let effectiveCps = (game.cpsLevel + (game.shardIncomeLevel * 5)) * getMultiplier();
+            let effectiveCps = (game.cpsLevel + game.shardIncomeLevel) * getMultiplier();
             game.money += effectiveCps * dt;
 
             let baseMiningTime = 300;
@@ -806,7 +804,7 @@
             updateMainScreenMiningGrid();
 
             if (document.getElementById('inventoryModal').style.display === 'flex') {
-                if (currentTab === 'cats' || currentTab === 'shards' || currentTab === 'sharditems') {
+                if (currentTab === 'cats' || currentTab === 'shards') {
                     game.cats.forEach(cat => {
                         let bar = document.getElementById(`prog-${cat.id}`);
                         if (bar) {
@@ -832,8 +830,9 @@
             let cost = getShardIncomeUpgradeCost();
             if (game.shards >= cost) {
                 game.shards -= cost;
-                game.shardIncomeLevel++;
-                showToast(`🚀 Shard Income Booster upgraded! (+5 Base CPS)`, "#00ffcc");
+                let boostAmount = Math.max(1, Math.floor(1 / 10)); // Teho sidottuna päivityksen määrään / 10
+                game.shardIncomeLevel += boostAmount;
+                showToast(`🚀 Shard Income Booster upgraded! (+${boostAmount} Base CPS)`, "#00ffcc");
                 updateShardShopUI();
                 saveGame(false);
             }
@@ -853,7 +852,7 @@
                 desc: itemDesc
             });
 
-            showToast(`📦 Purchased <strong>${itemName}</strong> into Inventory!`, "#f72585");
+            showToast(`📦 Purchased <strong>${itemName}</strong> into Shards inventory!`, "#f72585");
             updateShardShopUI();
             saveGame(false);
         }
@@ -1058,7 +1057,7 @@
         }
 
         function updateMainUI() {
-            let effectiveCps = (game.cpsLevel + (game.shardIncomeLevel * 5)) * getMultiplier();
+            let effectiveCps = (game.cpsLevel + game.shardIncomeLevel) * getMultiplier();
             let upgradeCost = getUpgradeCost();
             let maxCats = getMaxMiningCats();
             let eqCats = getEquippedCatsCount();
@@ -1161,7 +1160,6 @@
             selectedItemId = null;
             document.getElementById('tabOres').classList.toggle('active', tab === 'ores');
             document.getElementById('tabCats').classList.toggle('active', tab === 'cats');
-            document.getElementById('tabShardItems').classList.toggle('active', tab === 'sharditems');
             document.getElementById('tabShards').classList.toggle('active', tab === 'shards');
             document.getElementById('sellAllOresBtn').style.display = tab === 'ores' ? 'block' : 'none';
             renderInventory();
@@ -1188,9 +1186,8 @@
             renderInventory();
         }
 
-        function useSelectedItem() {
-            if (currentTab !== 'sharditems' || selectedItemId === null) return;
-            let idx = game.shardItems.findIndex(i => i.id === selectedItemId);
+        function useShardItem(id) {
+            let idx = game.shardItems.findIndex(i => i.id === id);
             if (idx === -1) return;
 
             let item = game.shardItems[idx];
@@ -1205,7 +1202,6 @@
             }
 
             game.shardItems.splice(idx, 1);
-            selectedItemId = null;
             saveGame(false);
             renderInventory();
         }
@@ -1330,48 +1326,45 @@
                         grid.appendChild(card);
                     });
                 }
-            } else if (currentTab === 'sharditems') {
-                document.getElementById('invSectionTitle').textContent = `🧪 Shard Items (${game.shardItems.length})`;
-                document.getElementById('invSubtext').textContent = 'Click a purchased shard item to use it.';
-
-                if (game.shardItems.length === 0) {
-                    grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">No items in inventory. Buy items from the Shard Shop!</p>';
-                } else {
-                    game.shardItems.forEach(item => {
-                        let isSelected = selectedItemId === item.id;
-                        const card = document.createElement('div');
-                        card.className = 'inv-card' + (isSelected ? ' selected' : '');
-                        card.onmousedown = () => selectItem(item.id);
-                        card.innerHTML = `
-                            <strong style="color: #00ffcc; font-size: 1.05rem;">${item.name}</strong>
-                            <div style="font-size: 0.85rem; color: #aaa; margin-top: 6px;">${item.desc}</div>
-                        `;
-                        grid.appendChild(card);
-                    });
-                }
             } else if (currentTab === 'shards') {
-                document.getElementById('invSectionTitle').textContent = `💠 Shard Balance`;
-                document.getElementById('invSubtext').textContent = 'Your current shard balance.';
+                document.getElementById('invSectionTitle').textContent = `💠 Shard Balance & Purchased Items`;
+                document.getElementById('invSubtext').textContent = 'Your shards and items bought from the Shard Shop (click to use).';
 
-                grid.innerHTML = `
-                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 20px; cursor: default;">
-                        <div style="font-size: 2.2rem; margin-bottom: 5px;">💠</div>
-                        <h3 style="margin: 0 0 5px 0; color: #00b4d8;">Total Shards: ${formatNumber(game.shards)}</h3>
-                        <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Earn more using the Shards Clicker panel on the main screen!</p>
+                let shardHtml = `
+                    <div class="inv-card" style="grid-column: 1 / -1; text-align: center; padding: 15px; cursor: default; margin-bottom: 5px;">
+                        <div style="font-size: 1.8rem; margin-bottom: 3px;">💠</div>
+                        <h3 style="margin: 0 0 3px 0; color: #00b4d8;">Total Shards: ${formatNumber(game.shards)}</h3>
+                        <p style="color: #aaa; font-size: 0.8rem; margin: 0;">Shard Income Level bonus: +${formatNumber(game.shardIncomeLevel)} CPS</p>
                     </div>
                 `;
+
+                if (game.shardItems.length === 0) {
+                    shardHtml += '<p style="color: #777; grid-column: 1 / -1; text-align: center; margin-top: 15px;">No shard items in inventory. Visit Shard Shop!</p>';
+                } else {
+                    game.shardItems.forEach(item => {
+                        shardHtml += `
+                            <div class="inv-card" style="background: #252b33; border-color: #00b4d8; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <strong style="color: #00ffcc; font-size: 1rem;">${item.name}</strong>
+                                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 4px;">${item.desc}</div>
+                                </div>
+                                <button class="use-btn" onclick="useShardItem(${item.id})" style="margin-top: 10px; padding: 6px;">✨ Use</button>
+                            </div>
+                        `;
+                    });
+                }
+                grid.innerHTML = shardHtml;
             }
 
             const infoEl = document.getElementById('selectedInfo');
             const btnsEl = document.getElementById('actionButtons');
-            const useBtn = document.getElementById('useActionBtn');
             const equipBtn = document.getElementById('equipActionBtn');
             const favBtn = document.getElementById('favActionBtn');
             const sellBtn = document.getElementById('sellActionBtn');
 
             if (currentTab === 'shards') {
                 btnsEl.style.display = 'none';
-                infoEl.textContent = 'Shard balance overview.';
+                infoEl.textContent = 'Manage your shards and use purchased items directly above.';
                 return;
             }
 
@@ -1380,14 +1373,10 @@
                 btnsEl.style.display = 'none';
             } else {
                 btnsEl.style.display = 'flex';
-                useBtn.style.display = currentTab === 'sharditems' ? 'inline-block' : 'none';
-                favBtn.style.display = (currentTab === 'ores' || currentTab === 'cats') ? 'inline-block' : 'none';
-                sellBtn.style.display = (currentTab === 'ores' || currentTab === 'cats') ? 'inline-block' : 'none';
+                favBtn.style.display = 'inline-block';
+                sellBtn.style.display = 'inline-block';
 
-                if (currentTab === 'sharditems') {
-                    equipBtn.style.display = 'none';
-                    infoEl.textContent = 'Click Use to activate this item immediately.';
-                } else if (currentTab === 'ores') {
+                if (currentTab === 'ores') {
                     equipBtn.style.display = 'none';
                     let ore = game.ores.find(o => o.id === selectedItemId);
                     if (!ore) {
@@ -1408,7 +1397,7 @@
                         sellBtn.disabled = false;
                         sellBtn.textContent = `Sell (${formatNumber(val)} 💵)`;
                     }
-                } else if (currentTab === 'cats') {
+                } else {
                     let cat = game.cats.find(c => c.id === selectedItemId);
                     if (!cat) {
                         selectedItemId = null;
