@@ -613,7 +613,7 @@
 
         <div class="panel">
             <h2>📦 Cat Boxes</h2>
-            <p style="font-size: 0.9rem; margin-bottom: 6px;">Requires Rebirth 1! Luck Boost gives <strong>70% Golden, 25% Diamond, 5% Internal</strong> (12x cost).</p>
+            <p style="font-size: 0.9rem; margin-bottom: 6px;">Requires Rebirth 1! Luck Boost gives <strong>70% Golden, 24% Diamond, 4% Internal, 1% Celestial</strong> (12x cost).</p>
             <div>
                 <button class="luck-toggle-btn" id="luckBoostBtn" onclick="toggleLuckBoost()" disabled>🍀 10x Luck Boost: OFF (12x Cost)</button>
                 <button id="boxBtn" onclick="startOpeningBox(1)" disabled>Locked (Rebirth 1)</button>
@@ -645,6 +645,23 @@
 
     <div class="anim-overlay" id="animModal">
         <div class="anim-content" id="animContent"></div>
+    </div>
+
+    <div class="modal-overlay" id="toolUpgraderModal">
+        <div class="modal-content" style="height: auto; max-width: 440px;">
+            <div class="modal-header">
+                <h2>⚒️ Use Tool Upgrader</h2>
+                <button class="close-btn" onclick="closeToolUpgraderModal()">✖ Close</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="color: #ccc; font-size: 0.92rem; margin-top: 0;">
+                    Choose a cat to upgrade <strong>only its tool</strong> by +1 tier (25% success rate, Max: Celestial).
+                </p>
+                <label style="font-size: 0.85rem; color: #aaa;">Choose Cat:</label>
+                <select id="toolUpgradeCatSelect"></select>
+                <button onclick="executeToolUpgrader()" style="margin-top: 15px; background-color: #00ffcc; color: #121212;">⚒️ Start Tool Upgrade (25%)</button>
+            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="dogBattleModal">
@@ -717,10 +734,9 @@
                 <div class="shop-card">
                     <div>
                         <h3>⚒️ Tool Upgrader</h3>
-                        <p style="font-size: 0.9rem; color: #bbb;"><strong>25% chance</strong> to upgrade a pickaxe or sword cat by +1 tier (Max: Diamond)!</p>
-                        <select id="upgradeCatSelect"></select>
+                        <p style="font-size: 0.9rem; color: #bbb;">Goes to Shards inventory. Use it to get a <strong>25% chance</strong> to upgrade a cat's tool (+1 tier, up to Celestial)!</p>
                     </div>
-                    <button id="buyPickaxeUpgradeBtn" onclick="buyPickaxeUpgrade()">Upgrade (250 💠)</button>
+                    <button id="buyToolUpgraderBtn" onclick="buyItemToInventory('toolupgrader', 250)">Buy (250 💠)</button>
                 </div>
 
                 <div class="shop-card" id="catMergerShopCard" style="border-color: #9d4edd;">
@@ -815,36 +831,48 @@
             { name: "Stone Pickaxe", speed: 2, chance: 30, color: "#808080", sellPrice: 300, rank: 2 },
             { name: "Iron Pickaxe", speed: 3, chance: 15, color: "#DCDCDC", sellPrice: 600, rank: 3 },
             { name: "Diamond Pickaxe", speed: 4, chance: 4.5, color: "#00BFFF", sellPrice: 800, rank: 4 },
-            { name: "Internal Pickaxe", speed: 5, chance: 0.5, color: "#FF007F", sellPrice: 1000, rank: 5 }
+            { name: "Internal Pickaxe", speed: 5, chance: 0.5, color: "#FF007F", sellPrice: 1000, rank: 5 },
+            { name: "Celestial Pickaxe", speed: 7, chance: 0, color: "#00ffcc", sellPrice: 2500, rank: 6 }
         ];
 
         const swords = [
-            { name: "Wooden Sword", chance: 50, color: "#8B5A2B", sellPrice: 150, winChance: 25, rank: 1 },
-            { name: "Stone Sword", chance: 30, color: "#808080", sellPrice: 400, winChance: 40, rank: 2 },
-            { name: "Iron Sword", chance: 15, color: "#DCDCDC", sellPrice: 750, winChance: 50, rank: 3 },
-            { name: "Diamond Sword", chance: 4.5, color: "#00BFFF", sellPrice: 1200, winChance: 60, rank: 4 },
-            { name: "Internal Sword", chance: 0.5, color: "#FF007F", sellPrice: 2000, winChance: 75, rank: 5 }
+            { name: "Wooden Sword", chance: 50, color: "#8B5A2B", sellPrice: 150, winChance: 25, doubleReward: false, rank: 1 },
+            { name: "Stone Sword", chance: 30, color: "#808080", sellPrice: 400, winChance: 40, doubleReward: false, rank: 2 },
+            { name: "Iron Sword", chance: 15, color: "#DCDCDC", sellPrice: 750, winChance: 50, doubleReward: false, rank: 3 },
+            { name: "Diamond Sword", chance: 4.5, color: "#00BFFF", sellPrice: 1200, winChance: 60, doubleReward: false, rank: 4 },
+            { name: "Internal Sword", chance: 0.5, color: "#FF007F", sellPrice: 2000, winChance: 75, doubleReward: false, rank: 5 },
+            { name: "Celestial Sword", chance: 0, color: "#00ffcc", sellPrice: 4000, winChance: 90, doubleReward: true, rank: 6 }
         ];
 
         const catRarities = [
             { name: "Normal", chance: 80, luckChance: 0, oreMult: 1, color: "#cccccc", rank: 1 },
             { name: "Golden", chance: 16, luckChance: 70, oreMult: 2, color: "#ffd700", rank: 2 },
-            { name: "Diamond", chance: 3.6, luckChance: 25, oreMult: 3, color: "#00bfff", rank: 3 },
-            { name: "Internal", chance: 0.4, luckChance: 5, oreMult: 5, color: "#ff007f", rank: 4 }
+            { name: "Diamond", chance: 3.6, luckChance: 24, oreMult: 3, color: "#00bfff", rank: 3 },
+            { name: "Internal", chance: 0.4, luckChance: 5, oreMult: 5, color: "#ff007f", rank: 4 },
+            { name: "Celestial", chance: 0, luckChance: 1, oreMult: 6, color: "#00ffcc", rank: 5 }
         ];
 
         const oresList = [
-            { name: "Iron", baseVal: 50, weight: 50, color: "#b0b0b0", rank: 1 },
-            { name: "Gold", baseVal: 200, weight: 25, color: "#ffd700", rank: 2 },
-            { name: "Diamond", baseVal: 500, weight: 15, color: "#00bfff", rank: 3 },
-            { name: "Titanium", baseVal: 1500, weight: 7, color: "#9999ff", rank: 4 },
-            { name: "Obanium", baseVal: 4000, weight: 2.5, color: "#ff6600", rank: 5 },
-            { name: "Internal", baseVal: 10000, weight: 0.5, color: "#ff007f", rank: 6 }
-        ];
+            { name: "Iron", baseVal: 50, weight: 40, color: "#b0b0b0", rank: 1 },
+            { name: "Gold", baseVal: 200, weight: 20, color: "#ffd700", rank: 2 },
+            { name: "Diamond", baseVal: 500, weight: 12, color: "#00bfff", rank: 3 },
+            // Uusi malmi heti Diamondin yläpuolella:
+            { name: "Onyx", baseVal: 750, weight: 9, color: "#333333", rank: 4 },
+            { name: "Titanium", baseVal: 1500, weight: 7, color: "#9999ff", rank: 5 },
+            { name: "Obanium", baseVal: 4000, weight: 4, color: "#ff6600", rank: 6 },
+            { name: "Internal", baseVal: 10000, weight: 3, color: "#ff007f", rank: 7 },
+            { name: "Celestial", baseVal: 25000, weight: 2, color: "#00ffcc", rank: 8 },
+            // 4 uutta halvempaa malmia (Copper, Silver, Bronze, Platinum) ennen Diamondia/Onyxia tai muualle halutessasi (tässä sijoitettu ennen Ironia tai heti alussa):
+            { name: "Copper", baseVal: 80, weight: 15, color: "#b87333", rank: 0 },
+            { name: "Silver", baseVal: 150, weight: 10, color: "#e6e6e6", rank: 0 },
+            { name: "Bronze", baseVal: 250, weight: 8, color: "#cd7f32", rank: 0 },
+            { name: "Platinum", baseVal: 400, weight: 6, color: "#e5e4e2", rank: 0 }
+        ].sort((a, b) => a.baseVal - b.baseVal).map((o, idx) => ({ ...o, rank: idx + 1 }));
 
         let currentTab = 'ores';
         let selectedItemId = null;
         let isModalAnimating = false;
+        let activeToolUpgraderItemId = null;
 
         function formatNumber(num) {
             if (num === undefined || isNaN(num)) return "0";
@@ -1110,8 +1138,8 @@
             if (game.shards < cost) return;
             game.shards -= cost;
 
-            let itemName = type === 'potion' ? '🧪 10x Money Potion' : '🐟 Premium Cat Food';
-            let itemDesc = type === 'potion' ? 'Multiplies income by 10x for 5 mins' : 'Doubles cat mined ores for 10 mins';
+            let itemName = type === 'potion' ? '🧪 10x Money Potion' : (type === 'catfood' ? '🐟 Premium Cat Food' : '⚒️ Tool Upgrader');
+            let itemDesc = type === 'potion' ? 'Multiplies income by 10x for 5 mins' : (type === 'catfood' ? 'Doubles cat mined ores for 10 mins' : '25% chance to upgrade tool (+1 tier, up to Celestial)');
 
             game.shardItems.push({
                 id: Date.now() + Math.random(),
@@ -1216,37 +1244,8 @@
 
             document.getElementById('buyPotionBtn').disabled = game.shards < 200;
             document.getElementById('buyCatFoodBtn').disabled = game.shards < 100;
+            document.getElementById('buyToolUpgraderBtn').disabled = game.shards < 250;
 
-            const select = document.getElementById('upgradeCatSelect');
-            const prevVal = select.value;
-            select.innerHTML = '';
-
-            let upgradableCats = game.cats.filter(c => {
-                let toolList = c.toolType === 'sword' ? swords : pickaxes;
-                let currentToolObj = toolList.find(t => t.name === c.pickaxe);
-                return currentToolObj && currentToolObj.rank < 4;
-            });
-
-            if (upgradableCats.length === 0) {
-                let opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "No upgradable cats (Max: Diamond)";
-                select.appendChild(opt);
-                document.getElementById('buyPickaxeUpgradeBtn').disabled = true;
-            } else {
-                upgradableCats.forEach(c => {
-                    let opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = `${c.rarity || 'Normal'} ${c.name} (${c.pickaxe})`;
-                    select.appendChild(opt);
-                });
-                if (prevVal && upgradableCats.some(c => String(c.id) === prevVal)) {
-                    select.value = prevVal;
-                }
-                document.getElementById('buyPickaxeUpgradeBtn').disabled = game.shards < 250;
-            }
-
-            // Cat Merger License Card
             const licenseBtn = document.getElementById('buyCatMergerLicenseBtn');
             const mergerCard = document.getElementById('catMergerShopCard');
             if (game.rebirths < 15) {
@@ -1264,20 +1263,12 @@
             }
         }
 
-        function buyCatMergerLicense() {
-            if (game.rebirths < 15 || game.shards < 500 || game.catMergerUnlocked) return;
-            game.shards -= 500;
-            game.catMergerUnlocked = true;
-            showToast("🧬 Cat Merger unlocked in Inventory!", "#9d4edd");
-            updateShardShopUI();
-            saveGame(false);
-        }
-
         function getMergeCost(cat) {
             let rarity = cat.rarity || "Normal";
             let base = 100;
             if (rarity === "Golden") base = 500;
             else if (rarity === "Diamond" || rarity === "Internal") base = 1000;
+            else if (rarity === "Celestial") base = 2500;
 
             let toolRank = 1;
             let toolList = cat.toolType === 'sword' ? swords : pickaxes;
@@ -1285,8 +1276,8 @@
             if (tObj) toolRank = tObj.rank;
 
             let mult = 1;
-            if (toolRank === 4) mult = 2; // Diamond tool
-            else if (toolRank >= 5) mult = 3; // Internal tool
+            if (toolRank === 4) mult = 2;
+            else if (toolRank >= 5) mult = 3;
 
             return base * mult;
         }
@@ -1297,8 +1288,8 @@
             if (!targetCat) return;
 
             let rarity = targetCat.rarity || "Normal";
-            if (rarity === "Internal") {
-                showToast("❌ Internal rarity cats cannot be merged further!", "#ff4444");
+            if (rarity === "Celestial") {
+                showToast("❌ Celestial rarity cats cannot be merged further!", "#ff4444");
                 return;
             }
 
@@ -1328,7 +1319,6 @@
 
             game.money -= cost;
 
-            // Näytä animaatio
             isModalAnimating = true;
             const animModal = document.getElementById('animModal');
             const content = document.getElementById('animContent');
@@ -1377,35 +1367,102 @@
             }, 1500);
         }
 
-        function buyPickaxeUpgrade() {
-            if (game.shards < 250) return;
-            const select = document.getElementById('upgradeCatSelect');
+        function openToolUpgraderModal(itemId) {
+            activeToolUpgraderItemId = itemId;
+            const modal = document.getElementById('toolUpgraderModal');
+            const select = document.getElementById('toolUpgradeCatSelect');
+            select.innerHTML = '';
+
+            let upgradableCats = game.cats.filter(c => {
+                let toolList = c.toolType === 'sword' ? swords : pickaxes;
+                let currentToolObj = toolList.find(t => t.name === c.pickaxe);
+                return currentToolObj && currentToolObj.rank < 6;
+            });
+
+            if (upgradableCats.length === 0) {
+                let opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No cats with upgradable tools (Max: Celestial)";
+                select.appendChild(opt);
+            } else {
+                upgradableCats.forEach(c => {
+                    let opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `${c.rarity || 'Normal'} ${c.name} (${c.pickaxe})`;
+                    select.appendChild(opt);
+                });
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeToolUpgraderModal() {
+            document.getElementById('toolUpgraderModal').style.display = 'none';
+        }
+
+        function executeToolUpgrader() {
+            const select = document.getElementById('toolUpgradeCatSelect');
             let catId = Number(select.value);
             let cat = game.cats.find(c => c.id === catId);
-            if (!cat) return;
-
-            if ((cat.rarity || "Normal") === "Internal" || cat.pickaxe.includes("Internal")) {
-                showToast("⚠️ Internal cats/tools cannot be upgraded!", "#ff4444");
+            if (!cat) {
+                showToast("❌ Please select a valid cat!", "#ff4444");
                 return;
             }
 
             let toolList = cat.toolType === 'sword' ? swords : pickaxes;
-            let currentIdx = toolList.findIndex(t => t.name === cat.pickaxe);
-            if (currentIdx === -1 || currentIdx >= 3) return;
-
-            game.shards -= 250;
-
-            if (Math.random() < 0.25) {
-                let nextTool = toolList[currentIdx + 1];
-                cat.pickaxe = nextTool.name;
-                cat.color = nextTool.color;
-
-                showToast(`🎉 Success! <strong>${cat.name}</strong>'s tool upgraded to <strong style="color:${nextTool.color}">${nextTool.name}</strong>!`, "#00ffcc");
-            } else {
-                showToast(`💥 Tool upgrade failed! (25% chance)`, "#ff4444");
+            let currentToolObj = toolList.find(t => t.name === cat.pickaxe);
+            if (!currentToolObj || currentToolObj.rank >= 6) {
+                showToast("❌ This cat's tool is already at maximum rank!", "#ff4444");
+                return;
             }
-            updateShardShopUI();
-            saveGame(false);
+
+            let itemIdx = game.shardItems.findIndex(i => i.id === activeToolUpgraderItemId);
+            if (itemIdx !== -1) {
+                game.shardItems.splice(itemIdx, 1);
+            }
+
+            closeToolUpgraderModal();
+            isModalAnimating = true;
+
+            const animModal = document.getElementById('animModal');
+            const content = document.getElementById('animContent');
+            animModal.style.display = 'flex';
+            content.innerHTML = `
+                <h3 style="color: #00ffcc; margin-top:0;">⚒️ Upgrading Tool...</h3>
+                <div class="merging-anim-icon">⚒️✨</div>
+                <p style="color: #00ffcc; font-weight: bold;">Chance: 25%</p>
+                <p style="color: #aaa; font-size: 0.85rem;">Enhancing ${cat.pickaxe}...</p>
+            `;
+
+            setTimeout(() => {
+                let success = Math.random() < 0.25;
+
+                if (success) {
+                    let nextTool = toolList.find(t => t.rank === currentToolObj.rank + 1);
+                    if (nextTool) {
+                        cat.pickaxe = nextTool.name;
+                        cat.color = nextTool.color;
+                        content.innerHTML = `
+                            <h3 style="color: #00ffcc; margin-top:0;">🎉 Tool Upgrade Successful!</h3>
+                            <div class="revealed-cat">🌟⚒️</div>
+                            <p style="color: #fff;"><strong>${cat.name}</strong>'s tool upgraded to <strong style="color:${nextTool.color}">${nextTool.name}</strong>!</p>
+                            <button onclick="closeAnimModal()" style="margin-top: 15px;">Awesome!</button>
+                        `;
+                        showToast(`🎉 Tool upgrade SUCCESS! Upgraded to ${nextTool.name}!`, "#00ffcc");
+                    }
+                } else {
+                    content.innerHTML = `
+                        <h3 style="color: #ff4444; margin-top:0;">💥 Tool Upgrade Failed!</h3>
+                        <div style="font-size: 3.5rem; margin: 15px 0;">💨🔨</div>
+                        <p style="color: #fff;">The tool upgrade failed (25% chance).</p>
+                        <button onclick="closeAnimModal()" style="margin-top: 15px; background-color: #ff4444; color: white;">Ouch...</button>
+                    `;
+                    showToast(`💥 Tool upgrade failed! (25% chance)`, "#ff4444");
+                }
+
+                saveGame(false);
+                renderInventory();
+            }, 1500);
         }
 
         function rollSingleCat() {
@@ -1416,6 +1473,7 @@
             let tAcc = 0;
             let selectedTool = toolList[0];
             for (let t of toolList) {
+                if (t.chance <= 0) continue;
                 tAcc += t.chance;
                 if (tRoll <= tAcc) {
                     selectedTool = t;
@@ -1639,29 +1697,27 @@
 
                 if (catWon) {
                     let rarity = cat.rarity || "Normal";
+                    let tool = swords.find(s => s.name === cat.pickaxe);
+                    let rewardCount = (tool && tool.doubleReward) ? 2 : 1;
                     let rewards = [];
 
-                    if (rarity === "Internal") {
-                        let count = Math.random() < 0.2 ? 2 : 1;
-                        for (let i = 0; i < count; i++) {
-                            let isPotion = Math.random() < 0.6;
-                            rewards.push(isPotion ? 'potion' : 'catfood');
+                    for (let k = 0; k < rewardCount; k++) {
+                        if (rarity === "Celestial" || rarity === "Internal") {
+                            let randItem = Math.random();
+                            rewards.push(randItem < 0.4 ? 'potion' : (randItem < 0.8 ? 'catfood' : 'toolupgrader'));
+                        } else if (rarity === "Diamond") {
+                            let randItem = Math.random();
+                            rewards.push(randItem < 0.4 ? 'potion' : (randItem < 0.8 ? 'catfood' : 'toolupgrader'));
+                        } else {
+                            let randItem = Math.random();
+                            rewards.push(randItem < 0.45 ? 'potion' : (randItem < 0.9 ? 'catfood' : 'toolupgrader'));
                         }
-                    } else if (rarity === "Diamond") {
-                        let isPotion = Math.random() < 0.5;
-                        rewards.push(isPotion ? 'potion' : 'catfood');
-                    } else if (rarity === "Golden") {
-                        let isPotion = Math.random() < 0.4;
-                        rewards.push(isPotion ? 'potion' : 'catfood');
-                    } else {
-                        let isPotion = Math.random() < 0.25;
-                        rewards.push(isPotion ? 'potion' : 'catfood');
                     }
 
                     let rewardNames = [];
                     rewards.forEach(type => {
-                        let rName = type === 'potion' ? '🧪 10x Money Potion' : '🐟 Premium Cat Food';
-                        let rDesc = type === 'potion' ? 'Multiplies income by 10x for 5 mins' : 'Doubles cat mined ores for 10 mins';
+                        let rName = type === 'potion' ? '🧪 10x Money Potion' : (type === 'catfood' ? '🐟 Premium Cat Food' : '⚒️ Tool Upgrader');
+                        let rDesc = type === 'potion' ? 'Multiplies income by 10x for 5 mins' : (type === 'catfood' ? 'Doubles cat mined ores for 10 mins' : '25% chance to upgrade tool (+1 tier)');
                         game.shardItems.push({
                             id: Date.now() + Math.random(),
                             type: type,
@@ -1912,23 +1968,26 @@
         }
 
         function useShardItem(id) {
-            let idx = game.shardItems.findIndex(i => i.id === id);
-            if (idx === -1) return;
+            let item = game.shardItems.find(i => i.id === id);
+            if (!item) return;
 
-            let item = game.shardItems[idx];
             let now = Date.now();
 
             if (item.type === 'potion') {
                 game.potionEndTime = Math.max(now, game.potionEndTime) + (5 * 60 * 1000);
                 showToast("🧪 10x Money Potion activated for 5 mins!", "#f72585");
+                game.shardItems = game.shardItems.filter(i => i.id !== id);
+                saveGame(false);
+                renderInventory();
             } else if (item.type === 'catfood') {
                 game.catFoodEndTime = Math.max(now, game.catFoodEndTime) + (10 * 60 * 1000);
                 showToast("🐟 Premium Cat Food activated for 10 mins (2x Ores)!", "#ffaa00");
+                game.shardItems = game.shardItems.filter(i => i.id !== id);
+                saveGame(false);
+                renderInventory();
+            } else if (item.type === 'toolupgrader') {
+                openToolUpgraderModal(id);
             }
-
-            game.shardItems.splice(idx, 1);
-            saveGame(false);
-            renderInventory();
         }
 
         function toggleFavorite() {
@@ -1982,8 +2041,8 @@
             if (!targetCat) return;
 
             let rarity = targetCat.rarity || "Normal";
-            if (rarity === "Internal" || targetCat.pickaxe.includes("Internal")) {
-                showToast("❌ Internal cats/tools cannot be sold with 'Sell All Kind'!", "#ff4444");
+            if (rarity === "Internal" || rarity === "Celestial" || targetCat.pickaxe.includes("Internal") || targetCat.pickaxe.includes("Celestial")) {
+                showToast("❌ Internal/Celestial cats cannot be sold with 'Sell All Kind'!", "#ff4444");
                 return;
             }
 
@@ -2191,7 +2250,7 @@
                 document.getElementById('invSectionTitle').textContent = `🧬 Cat Merger Machine`;
                 document.getElementById('invSubtext').textContent = 'Combine duplicate cats to upgrade their rarity! 2 cats = 25%, 3 = 50%, 4 = 75%, 5 = 100%.';
 
-                let validCats = game.cats.filter(c => (c.rarity || "Normal") !== "Internal");
+                let validCats = game.cats.filter(c => (c.rarity || "Normal") !== "Celestial");
                 if (validCats.length === 0) {
                     grid.innerHTML = '<p style="color: #777; grid-column: 1 / -1;">No eligible cats available for merging.</p>';
                 } else {
