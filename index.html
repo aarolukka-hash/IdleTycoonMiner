@@ -530,6 +530,10 @@
             background-color: #00ffcc;
             color: #121212;
         }
+        .tool-upg-action-btn {
+            background-color: #00ffcc;
+            color: #121212;
+        }
         .sell-all-kind-btn {
             background-color: #ff7700;
             color: #121212;
@@ -817,6 +821,7 @@
                     <div class="action-buttons" id="actionButtons" style="display: none;">
                         <button class="use-btn" id="useActionBtn" onclick="useSelectedItem()" style="display: none;">✨ Use</button>
                         <button class="equip-btn" id="equipActionBtn" onclick="toggleEquipCat()" style="display: none;">⛏️ Equip</button>
+                        <button class="tool-upg-action-btn" id="toolUpgActionBtn" onclick="useToolUpgraderFromBar()" style="display: none;">⚒️ Use Tool Upgrader</button>
                         <button class="sell-all-kind-btn" id="sellAllKindBtn" onclick="sellAllOfKind()" style="display: none;">Sell All Kind</button>
                         <button class="fav-btn" id="favActionBtn" onclick="toggleFavorite()" style="display: none;">★ Favorite</button>
                         <button class="sell-btn" id="sellActionBtn" onclick="sellSelectedItem()" style="display: none;">Sell</button>
@@ -1504,12 +1509,17 @@
             }, 1500);
         }
 
+        function useToolUpgraderFromBar() {
+            if (selectedItemId === null || !window.pendingToolUpgraderId) return;
+            useToolUpgraderOnCat(selectedItemId, window.pendingToolUpgraderId);
+        }
+
         function promptToolUpgradeSelection(itemId) {
             window.pendingToolUpgraderId = itemId;
             closeShardShop();
             openInventory();
             switchTab('cats');
-            showToast("👉 Select a cat in your inventory to use the Tool Upgrader!", "#00b4d8");
+            showToast("👉 Select a cat in your inventory and click 'Use Tool Upgrader'!", "#00b4d8");
         }
 
         function rollSingleCat() {
@@ -2250,7 +2260,7 @@
                 
                 let hasToolUpgraderInInv = game.shardItems.some(i => i.type === 'toolupgrader');
                 let upgraderPrompt = (window.pendingToolUpgraderId && hasToolUpgraderInInv) 
-                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Click on the cat below whose tool you want to upgrade!</div>` 
+                    ? `<div style="grid-column: 1 / -1; background: #263833; border: 1px solid #00ffcc; padding: 10px; border-radius: 6px; margin-bottom: 5px; text-align: center; color: #00ffcc;">⚒️ Tool Upgrader active! Select a cat below and click 'Use Tool Upgrader' in the bottom action bar.</div>` 
                     : '';
 
                 document.getElementById('invSectionTitle').textContent = `🐱 Your Cats (Mining: ${eqCats}/${maxCats})`;
@@ -2271,9 +2281,6 @@
 
                         let nameColorStyle = cat.isWasabi ? 'color: #00ffcc; text-shadow: 0 0 6px #00ffcc;' : 'color: #fff;';
 
-                        let showUpgraderBtn = (window.pendingToolUpgraderId && hasToolUpgraderInInv && tool && tool.rank < 6);
-                        let upgraderBtnHtml = showUpgraderBtn ? `<button onclick="useToolUpgraderOnCat(${cat.id}, window.pendingToolUpgraderId)" style="background-color: #00ffcc; color: #121212; margin-top: 8px; padding: 6px; font-size: 0.8rem;">⚒️ Use Upgrader</button>` : '';
-
                         catsHtml += `
                             <div class="inv-card${isSelected ? ' selected' : ''}${cat.equipped && !isSword ? ' equipped' : ''}" onmousedown="selectItem(${cat.id})">
                                 ${cat.favorite ? '<span class="fav-badge">★</span>' : ''}
@@ -2291,7 +2298,6 @@
                                         <div class="progress-bar" id="prog-${cat.id}" style="width: ${Math.min(cat.progress, 100)}%;"></div>
                                     </div>
                                 ` : ''}
-                                ${upgraderBtnHtml}
                             </div>
                         `;
                     });
@@ -2373,6 +2379,7 @@
             const btnsEl = document.getElementById('actionButtons');
             const useBtn = document.getElementById('useActionBtn');
             const equipBtn = document.getElementById('equipActionBtn');
+            const toolUpgBtn = document.getElementById('toolUpgActionBtn');
             const sellAllKindBtn = document.getElementById('sellAllKindBtn');
             const favBtn = document.getElementById('favActionBtn');
             const sellBtn = document.getElementById('sellActionBtn');
@@ -2392,8 +2399,11 @@
                 sellBtn.style.display = 'inline-block';
                 useBtn.style.display = 'none';
 
+                let hasUpgraderPending = (window.pendingToolUpgraderId && game.shardItems.some(i => i.type === 'toolupgrader'));
+
                 if (currentTab === 'ores') {
                     equipBtn.style.display = 'none';
+                    toolUpgBtn.style.display = 'none';
                     sellAllKindBtn.style.display = 'none';
                     let ore = game.ores.find(o => o.id === selectedItemId);
                     if (!ore) {
@@ -2444,6 +2454,12 @@
                             equipBtn.disabled = false;
                             equipBtn.textContent = '⛏️ Equip';
                         }
+                    }
+
+                    if (hasUpgraderPending && tool && tool.rank < 6) {
+                        toolUpgBtn.style.display = 'inline-block';
+                    } else {
+                        toolUpgBtn.style.display = 'none';
                     }
 
                     if (rarity.name === "Normal" || rarity.name === "Golden") {
